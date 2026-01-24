@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    mainClass = 'PiLogger'
+    mainClass = 'pi.logger.PiLogger'
 }
 
 wpilibTools.deps.wpilibVersion = wpi.versions.wpilibVersion.get()
