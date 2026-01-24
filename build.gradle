@@ -1,45 +1,56 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2026.2.1"
+    id 'application'
+    id 'com.gradleup.shadow' version '8.3.5'
+    id "edu.wpi.first.GradleRIO" version "2025.1.1"
+    id 'edu.wpi.first.WpilibTools' version '2.1.0'
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+application {
+    mainClass = 'PiLogger'
 }
 
-repositories {
-    mavenCentral()
+wpilibTools.deps.wpilibVersion = wpi.versions.wpilibVersion.get()
+
+def nativeConfigName = 'wpilibNatives'
+def nativeConfig = configurations.create(nativeConfigName)
+
+def nativeTasks = wpilibTools.createExtractionTasks {
+    configurationName = nativeConfigName
 }
+
+nativeTasks.addToSourceSetResources(sourceSets.main)
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpimath")
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet")
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpiutil")
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("ntcore")
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
+nativeConfig.dependencies.add wpilibTools.deps.wpilibOpenCv("frc" + wpi.frcYear.get(), wpi.versions.opencvVersion.get())
 
 dependencies {
-    // Core WPILib utilities + NTCore
-    implementation wpi.java.deps.wpilib()
-    implementation wpi.java.vendor.java()
+    implementation wpilibTools.deps.wpilibJava("wpiutil")
+    implementation wpilibTools.deps.wpilibJava("wpimath")
+    implementation wpilibTools.deps.wpilibJava("wpinet")
+    implementation wpilibTools.deps.wpilibJava("ntcore")
+    implementation wpilibTools.deps.wpilibJava("cscore")
+    implementation wpilibTools.deps.wpilibJava("cameraserver")
+    implementation wpilibTools.deps.wpilibOpenCvJava("frc" + wpi.frcYear.get(), wpi.versions.opencvVersion.get())
 
-    runtimeOnly wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
-    runtimeOnly wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-annotations", version: wpi.versions.jacksonVersion.get()
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: wpi.versions.jacksonVersion.get()
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-databind", version: wpi.versions.jacksonVersion.get()
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    implementation group: "org.ejml", name: "ejml-simple", version: wpi.versions.ejmlVersion.get()
+    implementation group: "us.hebi.quickbuf", name: "quickbuf-runtime", version: wpi.versions.quickbufVersion.get();
 }
 
-test {
-    useJUnitPlatform()
+shadowJar {
+    archiveBaseName = "PiLogger"
+    archiveVersion = ""
+    exclude("module-info.class")
+    archiveClassifier.set(wpilibTools.currentPlatform.platformName)
 }
 
-jar {
-    archiveBaseName = "pi-logger"
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    manifest {
-        attributes(
-            "Main-Class": "pi.logger.Main"
-        )
-    }
-
-    from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
+wrapper {
+    gradleVersion = '8.11'
 }

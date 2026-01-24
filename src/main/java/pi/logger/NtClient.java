@@ -1,5 +1,6 @@
 package pi.logger;
 
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -14,8 +15,8 @@ public final class NtClient {
     public static void start(String roboRioIp) {
         inst.startClient4("pi-logger");
         inst.setServer(roboRioIp);
-
         System.out.println("NT client started, server=" + roboRioIp);
+
     }
 
     public static NetworkTableInstance get() {

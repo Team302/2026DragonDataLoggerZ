@@ -1,2 +1,1 @@
-
-"%USERPROFILE%\wpilib\2026\jdk\bin\java.exe" -jar build/libs/pi-logger.jar
+call gradlew.bat run
