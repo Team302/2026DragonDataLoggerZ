@@ -17,7 +17,7 @@ public final class USBFileLogger {
     private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024; // 50 MB
     private static final long MAX_FILE_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
-    private static final File LOG_DIR = new File("logs");
+    private static final File LOG_DIR = new File("/mnt/usb_logs");
 
     private static volatile boolean running = true;
 
@@ -84,7 +84,6 @@ public final class USBFileLogger {
 
     private static void rotate() throws IOException {
         closeQuietly();
-        compress(currentFile);
         openNewFile();
     }
 
@@ -110,27 +109,6 @@ public final class USBFileLogger {
                 out.close();
             }
         } catch (IOException ignored) {}
-    }
-
-    private static void compress(File file) {
-        File gz = new File(file.getAbsolutePath() + ".gz");
-
-        try (GZIPOutputStream gos =
-                     new GZIPOutputStream(
-                             new BufferedOutputStream(
-                                     new FileOutputStream(gz), 1 << 20));
-             FileOutputStream fis =
-                     new FileOutputStream(file)) {
-
-            Files.copy(file.toPath(), gos);
-            Files.delete(file.toPath());
-
-            System.out.println("Compressed " + gz.getName());
-
-        } catch (IOException e) {
-            System.err.println("Failed to compress " + file.getName());
-            e.printStackTrace();
-        }
     }
 
     private static String timestamp() {
