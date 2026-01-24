@@ -1,1 +1,1 @@
-./gradlew clean jar
+call gradlew.bat clean jar
