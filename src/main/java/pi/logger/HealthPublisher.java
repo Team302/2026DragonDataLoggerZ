@@ -37,7 +37,7 @@ public final class HealthPublisher {
                 queueDepth.setInteger(
                         UdpReceiver.getQueue().size());
 
-                diskFree.setDouble(getDiskFreeMB("."));
+                diskFree.setDouble(getDiskFreeMB("/mnt/usb_logs"));
 
                 cpuLoad.setDouble(getCpuLoad());
 
