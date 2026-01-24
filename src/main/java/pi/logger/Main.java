@@ -1,17 +1,27 @@
 package pi.logger;
 
-import edu.wpi.first.util.datalog.DoubleLogEntry;
-import edu.wpi.first.util.datalog.DataLog;
-import edu.wpi.first.util.datalog.WPILOGWriter;
+//import edu.wpi.first.util.datalog.DoubleLogEntry;
+//import edu.wpi.first.util.datalog.DataLog;
+//import edu.wpi.first.util.datalog.WPILOGWriter;
 
 public class Main {
     public static void main(String[] args) throws Exception {
         System.out.println("Pi logger starting");
 
+        NtClient.start("10.0.3.2");
+
+        MatchInfoListener.start();
+        HealthPublisher.start();
+
+        UdpReceiver.start();
+        USBFileLogger.start();
+
+        System.out.println("Pi logger running");
+
 
     }
 }
-public class PiLogger {
+/*public class PiLogger {
     private DataLog log;
     private DoubleLogEntry visionLatency;
 
@@ -43,5 +53,7 @@ public class PiLogger {
     public void logData(double latency) {
         visionLatency.append(latency);
     }
+
+            
     
-}
+}*/

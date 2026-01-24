@@ -17,6 +17,9 @@ dependencies {
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
 
+    runtimeOnly wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+    runtimeOnly wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
 }
 
