@@ -3,6 +3,7 @@ package pi.logger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -15,6 +16,7 @@ public final class UdpReceiver {
             new LinkedBlockingQueue<>(10_000);
 
     private static volatile boolean running = true;
+    private static volatile DatagramSocket socket = null;
 
     private UdpReceiver() {}
 
@@ -26,6 +28,11 @@ public final class UdpReceiver {
 
     public static void stop() {
         running = false;
+        // Close the socket to unblock the receive() call
+        DatagramSocket s = socket;
+        if (s != null && !s.isClosed()) {
+            s.close();
+        }
     }
 
     public static BlockingQueue<UdpMessage> getQueue() {
@@ -33,9 +40,10 @@ public final class UdpReceiver {
     }
 
     private static void run() {
-        try (DatagramSocket socket =
+        try (DatagramSocket s =
                      new DatagramSocket(null)) {
 
+            socket = s;
             socket.bind(new InetSocketAddress(PORT));
             socket.setReceiveBufferSize(1 << 20); // 1 MB buffer
 
@@ -69,9 +77,17 @@ public final class UdpReceiver {
 
                 queue.offer(msg); // non-blocking
             }
+        } catch (SocketException e) {
+            // Expected when socket is closed by stop()
+            if (running) {
+                System.err.println("UDP receiver socket error");
+                e.printStackTrace();
+            }
         } catch (Exception e) {
             System.err.println("UDP receiver error");
             e.printStackTrace();
+        } finally {
+            socket = null;
         }
     }
 }
