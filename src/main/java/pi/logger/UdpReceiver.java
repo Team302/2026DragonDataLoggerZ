@@ -40,12 +40,12 @@ public final class UdpReceiver {
     }
 
     private static void run() {
-        try (DatagramSocket s =
-                     new DatagramSocket(null)) {
-
+        DatagramSocket s = null;
+        try {
+            s = new DatagramSocket(null);
             socket = s;
-            socket.bind(new InetSocketAddress(PORT));
-            socket.setReceiveBufferSize(1 << 20); // 1 MB buffer
+            s.bind(new InetSocketAddress(PORT));
+            s.setReceiveBufferSize(1 << 20); // 1 MB buffer
 
             System.out.println("UDP receiver listening on port " + PORT);
 
@@ -55,7 +55,7 @@ public final class UdpReceiver {
                 DatagramPacket packet =
                         new DatagramPacket(buffer, buffer.length);
 
-                socket.receive(packet); // blocking
+                s.receive(packet); // blocking
 
                 long timestamp = System.nanoTime();
 
@@ -88,6 +88,9 @@ public final class UdpReceiver {
             e.printStackTrace();
         } finally {
             socket = null;
+            if (s != null && !s.isClosed()) {
+                s.close();
+            }
         }
     }
 }
