@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.BlockingQueue;
-import java.util.zip.GZIPOutputStream;
 
 public final class USBFileLogger {
 
