@@ -13,10 +13,6 @@ repositories {
 }
 
 dependencies {
-    // Core WPILib utilities + NTCore
-    implementation wpi.java.deps.wpilib()
-    implementation wpi.java.vendor.java()
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
 }
 
@@ -30,7 +26,7 @@ jar {
 
     manifest {
         attributes(
-            "Main-Class": "pi.logger.Main"
+            "Main-Class": "pi.logger.ReceiverMain"
         )
     }
 

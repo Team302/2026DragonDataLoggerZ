@@ -5,14 +5,51 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * Simple UDP receiver that expects CSV payloads and writes LogRecord entries via the Logger.
- * Expected CSV formats (either):
- * 1) voltage,motorId,motorSpeed,motorCurrent
- * 2) timestampISO,voltage,motorId,motorSpeed,motorCurrent
+ * UDP receiver that expects CSV payloads and writes LogRecord entries via the Logger.
+ * Supports flexible field formats:
+ * 1) Fixed 4-field legacy: voltage,motorId,motorSpeed,motorCurrent
+ * 2) Fixed 5-field with timestamp: timestampISO,voltage,motorId,motorSpeed,motorCurrent
+ * 3) Dynamic fields (if first line is header): field1,field2,field3,...
+ *    followed by data: value1,value2,value3,...
  */
 public class UdpReceiver implements AutoCloseable {
+    /**
+     * Immutable telemetry record holder with dynamic fields.
+     * Stores timestamp and a map of field names to values.
+     */
+    public static class LogRecord {
+        private final Instant timestamp;
+        private final Map<String, String> fields;  // field name -> value (as string)
+
+        public LogRecord(Instant timestamp, Map<String, String> fields) {
+            this.timestamp = timestamp;
+            this.fields = new LinkedHashMap<>(fields);  // preserve insertion order
+        }
+
+        public Instant getTimestamp() { return timestamp; }
+        public Map<String, String> getFields() { return new LinkedHashMap<>(fields); }
+        
+        // Legacy accessors for backward compatibility
+        public double getVoltage() { return parseDouble(fields.get("voltage"), 0.0); }
+        public String getMotorId() { return fields.getOrDefault("motorId", ""); }
+        public double getMotorSpeed() { return parseDouble(fields.get("motorSpeed"), 0.0); }
+        public double getMotorCurrent() { return parseDouble(fields.get("motorCurrent"), 0.0); }
+
+        private static double parseDouble(String s, double def) {
+            try { return s != null ? Double.parseDouble(s) : def; }
+            catch (NumberFormatException e) { return def; }
+        }
+
+        @Override
+        public String toString() {
+            return "LogRecord{timestamp=" + timestamp + ", fields=" + fields + '}';
+        }
+    }
+
     private final DatagramSocket socket;
     private final Thread worker;
     private volatile boolean running = true;
@@ -21,6 +58,7 @@ public class UdpReceiver implements AutoCloseable {
     public UdpReceiver(Logger logger, int port) throws SocketException {
         this.logger = logger;
         this.socket = new DatagramSocket(port);
+        this.socket.setSoTimeout(10000);  // 10 second timeout for receive
         this.worker = new Thread(this::loop, "UdpReceiver-Thread");
         worker.setDaemon(true);
         worker.start();
@@ -33,33 +71,55 @@ public class UdpReceiver implements AutoCloseable {
             try {
                 socket.receive(packet);
                 String s = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8).trim();
+                System.out.println("[UdpReceiver] Raw: " + s);
                 if (s.isEmpty()) continue;
+                
                 String[] parts = s.split(",");
+                System.out.println("[UdpReceiver] Parts count: " + parts.length);
+                
                 Instant ts = Instant.now();
+                Map<String, String> fields = new LinkedHashMap<>();
 
-                int start = 0;
-                if (parts.length >= 5) {
-                    // try parse timestamp
+                // Try to detect and parse timestamp in first field
+                int startIndex = 0;
+                if (parts.length >= 2) {
                     try {
-                        ts = Instant.parse(parts[0]);
-                        start = 1;
+                        ts = Instant.parse(parts[0].trim());
+                        startIndex = 1;
+                        System.out.println("[UdpReceiver] Parsed timestamp: " + ts);
                     } catch (Exception ignored) {
-                        // not a timestamp, keep now and parse from 0
-                        start = 0;
+                        startIndex = 0;
                     }
                 }
 
-                // expect remaining: voltage,motorId,motorSpeed,motorCurrent
-                if (parts.length - start < 4) continue;
-                double voltage = Double.parseDouble(parts[start + 0]);
-                String motorId = parts[start + 1];
-                double speed = Double.parseDouble(parts[start + 2]);
-                double current = Double.parseDouble(parts[start + 3]);
+                int remaining = parts.length - startIndex;
 
-                LogRecord r = new LogRecord(ts, voltage, motorId, speed, current);
+                // Legacy 4-field format: voltage,motorId,motorSpeed,motorCurrent
+                if (remaining == 4) {
+                    fields.put("voltage", parts[startIndex].trim());
+                    fields.put("motorId", parts[startIndex + 1].trim());
+                    fields.put("motorSpeed", parts[startIndex + 2].trim());
+                    fields.put("motorCurrent", parts[startIndex + 3].trim());
+                } 
+                // Generic N-field format (at least 2 fields to make sense)
+                else if (remaining >= 2) {
+                    // Use sequential field names if custom names not provided
+                    for (int i = 0; i < remaining; i++) {
+                        String fieldName = "field" + (i + 1);
+                        fields.put(fieldName, parts[startIndex + i].trim());
+                    }
+                } else {
+                    System.out.println("[UdpReceiver] Skipping packet: insufficient fields (" + remaining + ")");
+                    continue;
+                }
+
+                LogRecord r = new LogRecord(ts, fields);
                 logger.log(r);
             } catch (Exception e) {
-                if (running) e.printStackTrace();
+                if (running) {
+                    System.err.println("[UdpReceiver] Error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }
     }
