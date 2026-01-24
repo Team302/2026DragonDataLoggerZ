@@ -30,8 +30,12 @@ public final class UdpReceiver {
         running = false;
         // Close the socket to unblock the receive() call
         DatagramSocket s = socket;
-        if (s != null && !s.isClosed()) {
-            s.close();
+        if (s != null) {
+            try {
+                s.close();
+            } catch (Exception e) {
+                // Ignore exceptions during close
+            }
         }
     }
 
@@ -87,8 +91,12 @@ public final class UdpReceiver {
             System.err.println("UDP receiver error");
             e.printStackTrace();
         } finally {
-            if (s != null && !s.isClosed()) {
-                s.close();
+            try {
+                if (s != null) {
+                    s.close();
+                }
+            } catch (Exception e) {
+                // Ignore exceptions during close
             }
             socket = null;
         }
