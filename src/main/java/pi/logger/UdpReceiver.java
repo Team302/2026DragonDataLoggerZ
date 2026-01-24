@@ -87,10 +87,10 @@ public final class UdpReceiver {
             System.err.println("UDP receiver error");
             e.printStackTrace();
         } finally {
-            socket = null;
             if (s != null && !s.isClosed()) {
                 s.close();
             }
+            socket = null;
         }
     }
 }
