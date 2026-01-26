@@ -2,139 +2,104 @@ package pi.logger;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * UDP receiver that expects CSV payloads and writes LogRecord entries via the Logger.
- * Supports flexible field formats:
- * 1) Fixed 4-field legacy: voltage,motorId,motorSpeed,motorCurrent
- * 2) Fixed 5-field with timestamp: timestampISO,voltage,motorId,motorSpeed,motorCurrent
- * 3) Dynamic fields (if first line is header): field1,field2,field3,...
- *    followed by data: value1,value2,value3,...
- */
-public class UdpReceiver implements AutoCloseable {
-    /**
-     * Immutable telemetry record holder with dynamic fields.
-     * Stores timestamp and a map of field names to values.
-     */
-    public static class LogRecord {
-        private final Instant timestamp;
-        private final Map<String, String> fields;  // field name -> value (as string)
+public final class UdpReceiver {
 
-        public LogRecord(Instant timestamp, Map<String, String> fields) {
-            this.timestamp = timestamp;
-            this.fields = new LinkedHashMap<>(fields);  // preserve insertion order
-        }
+    private static final int PORT = 5900; // choose your port
+    private static final int MAX_PACKET_SIZE = 1500;
 
-        public Instant getTimestamp() { return timestamp; }
-        public Map<String, String> getFields() { return new LinkedHashMap<>(fields); }
-        
-        // Legacy accessors for backward compatibility
-        public double getVoltage() { return parseDouble(fields.get("voltage"), 0.0); }
-        public String getMotorId() { return fields.getOrDefault("motorId", ""); }
-        public double getMotorSpeed() { return parseDouble(fields.get("motorSpeed"), 0.0); }
-        public double getMotorCurrent() { return parseDouble(fields.get("motorCurrent"), 0.0); }
+    private static final BlockingQueue<UdpMessage> queue =
+            new LinkedBlockingQueue<>(10_000);
 
-        private static double parseDouble(String s, double def) {
-            try { return s != null ? Double.parseDouble(s) : def; }
-            catch (NumberFormatException e) { return def; }
-        }
+    private static volatile boolean running = true;
+    private static volatile DatagramSocket socket = null;
 
-        @Override
-        public String toString() {
-            return "LogRecord{timestamp=" + timestamp + ", fields=" + fields + '}';
-        }
+    private UdpReceiver() {}
+
+    public static void start() {
+        Thread t = new Thread(UdpReceiver::run, "udp-receiver");
+        t.setDaemon(true);
+        t.start();
     }
 
-    private final DatagramSocket socket;
-    private final Thread worker;
-    private volatile boolean running = true;
-    private final Logger logger;
-
-    public UdpReceiver(Logger logger, int port) throws SocketException {
-        this.logger = logger;
-        this.socket = new DatagramSocket(port);
-        this.socket.setSoTimeout(10000);  // 10 second timeout for receive
-        this.worker = new Thread(this::loop, "UdpReceiver-Thread");
-        worker.setDaemon(true);
-        worker.start();
-    }
-
-    private void loop() {
-        byte[] buf = new byte[2048];
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-        while (running && !socket.isClosed()) {
+    public static void stop() {
+        running = false;
+        // Close the socket to unblock the receive() call
+        DatagramSocket s = socket;
+        if (s != null) {
             try {
-                socket.receive(packet);
-                String s = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8).trim();
-                System.out.println("[UdpReceiver] Raw: " + s);
-                if (s.isEmpty()) continue;
-                
-                String[] parts = s.split(",");
-                System.out.println("[UdpReceiver] Parts count: " + parts.length);
-                
-                Instant ts = Instant.now();
-                Map<String, String> fields = new LinkedHashMap<>();
-
-                // Try to detect and parse timestamp in first field
-                int startIndex = 0;
-                if (parts.length >= 2) {
-                    try {
-                        ts = Instant.parse(parts[0].trim());
-                        startIndex = 1;
-                        System.out.println("[UdpReceiver] Parsed timestamp: " + ts);
-                    } catch (Exception ignored) {
-                        startIndex = 0;
-                    }
-                }
-
-                int remaining = parts.length - startIndex;
-
-                // Legacy 4-field format: voltage,motorId,motorSpeed,motorCurrent
-                if (remaining == 4) {
-                    fields.put("voltage", parts[startIndex].trim());
-                    fields.put("motorId", parts[startIndex + 1].trim());
-                    fields.put("motorSpeed", parts[startIndex + 2].trim());
-                    fields.put("motorCurrent", parts[startIndex + 3].trim());
-                } 
-                // Generic N-field format (at least 2 fields to make sense)
-                else if (remaining >= 2) {
-                    // Use sequential field names if custom names not provided
-                    for (int i = 0; i < remaining; i++) {
-                        String fieldName = "field" + (i + 1);
-                        fields.put(fieldName, parts[startIndex + i].trim());
-                    }
-                } else {
-                    System.out.println("[UdpReceiver] Skipping packet: insufficient fields (" + remaining + ")");
-                    continue;
-                }
-
-                LogRecord r = new LogRecord(ts, fields);
-                logger.log(r);
+                s.close();
             } catch (Exception e) {
-                if (running) {
-                    System.err.println("[UdpReceiver] Error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-                    e.printStackTrace();
-                }
+                // Ignore exceptions during close
             }
         }
     }
 
-    @Override
-    public void close() {
-        running = false;
+    public static BlockingQueue<UdpMessage> getQueue() {
+        return queue;
+    }
+
+    private static void run() {
+        DatagramSocket s = null;
         try {
-            socket.close();
-        } catch (Exception ignored) {
-        }
-        try {
-            worker.join(500);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
+            s = new DatagramSocket(null);
+            socket = s;
+            s.bind(new InetSocketAddress(PORT));
+            s.setReceiveBufferSize(1 << 20); // 1 MB buffer
+
+            System.out.println("UDP receiver listening on port " + PORT);
+
+            byte[] buffer = new byte[MAX_PACKET_SIZE];
+
+            while (running) {
+                DatagramPacket packet =
+                        new DatagramPacket(buffer, buffer.length);
+
+                s.receive(packet); // blocking
+
+                long timestamp = System.nanoTime();
+
+                byte[] payload = new byte[packet.getLength()];
+                System.arraycopy(
+                        packet.getData(),
+                        packet.getOffset(),
+                        payload,
+                        0,
+                        packet.getLength()
+                );
+
+                UdpMessage msg = new UdpMessage(
+                        timestamp,
+                        packet.getAddress().getHostAddress(),
+                        packet.getPort(),
+                        payload
+                );
+
+                queue.offer(msg); // non-blocking
+            }
+        } catch (SocketException e) {
+            // Expected when socket is closed by stop()
+            if (running) {
+                System.err.println("UDP receiver socket error");
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            System.err.println("UDP receiver error");
+            e.printStackTrace();
+        } finally {
+            try {
+                if (s != null) {
+                    s.close();
+                }
+            } catch (Exception e) {
+                // Ignore exceptions during close
+            }
+            socket = null;
         }
     }
 }
+
