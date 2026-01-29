@@ -22,6 +22,7 @@ test {
 
 jar {
     archiveBaseName = "pi-logger"
+    archiveClassifier = "all"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     manifest {
