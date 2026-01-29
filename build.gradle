@@ -10,6 +10,11 @@ application {
     mainClass = 'pi.logger.PiLogger'
 }
 
+repositories {
+    mavenCentral()
+    maven { url = 'https://frcmaven.wpi.edu/artifactory/release/' }
+}
+
 wpilibTools.deps.wpilibVersion = wpi.versions.wpilibVersion.get()
 
 def nativeConfigName = 'wpilibNatives'
@@ -25,6 +30,9 @@ nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpiutil")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("ntcore")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
+
+
+
 
 dependencies {
     //implementation wpi.java.deps.wpilib()
@@ -66,10 +74,46 @@ shadowJar {
     manifest {
         attributes 'Main-Class': 'pi.logger.PiLogger'
     }
+    // Merge service files for proper loading
+    mergeServiceFiles()
 }
+
+// Make shadowJar include the extracted natives as resources
+shadowJar.dependsOn nativeTasks
 
 assemble.dependsOn shadowJar
 
+configurations {
+    arm64Natives {
+        // Make this configuration use the same repositories as regular dependencies
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    arm64Natives wpi.java.deps.wpilibJniRelease(wpi.platforms.linuxarm64)
+    arm64Natives wpi.java.vendor.jniRelease(wpi.platforms.linuxarm64)
+}
+
 wrapper {
     gradleVersion = '8.11'
+}
+
+task shadowJarArm64(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveBaseName = "PiLogger"
+    archiveVersion = ""
+    archiveClassifier.set("linuxarm64-cross")
+    from sourceSets.main.output
+    configurations = [project.configurations.runtimeClasspath]
+    exclude("module-info.class")
+    manifest {
+        attributes 'Main-Class': 'pi.logger.PiLogger'
+    }
+    mergeServiceFiles()
+    
+    // Extract ARM64 natives from ZIP files and include them
+    from(project.configurations.arm64Natives.collect { 
+        it.name.endsWith('.zip') ? zipTree(it) : it 
+    })
 }
