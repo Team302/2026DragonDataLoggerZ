@@ -79,7 +79,7 @@ shadowJar {
 }
 
 // Make shadowJar include the extracted natives as resources
-shadowJar.dependsOn nativeTasks
+// nativeTasks is already added to sourceSets.main.resources, so no explicit dependency needed
 
 assemble.dependsOn shadowJar
 

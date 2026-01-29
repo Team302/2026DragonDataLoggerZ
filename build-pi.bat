@@ -1,0 +1,1 @@
+call gradlew.bat clean shadowJarArm64

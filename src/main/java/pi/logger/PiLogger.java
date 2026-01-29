@@ -35,17 +35,27 @@ import java.nio.file.Files;
 public class PiLogger {
     
     private static void extractAndLoadLibrary(String libName) throws IOException {
+        String osName = System.getProperty("os.name").toLowerCase();
         String osArch = System.getProperty("os.arch");
         String platform;
-        if (osArch.contains("aarch64") || osArch.contains("arm64")) {
+        String libPrefix;
+        String libExt;
+        
+        if (osName.contains("win")) {
+            platform = "windows/x86-64";
+            libPrefix = "";
+            libExt = ".dll";
+        } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
             platform = "linux/arm64";
-        } else if (osArch.contains("amd64") || osArch.contains("x86_64")) {
-            platform = "linux/x86-64";
+            libPrefix = "lib";
+            libExt = ".so";
         } else {
-            platform = "linux/arm64"; // Default to arm64
+            platform = "linux/x86-64";
+            libPrefix = "lib";
+            libExt = ".so";
         }
         
-        String resourcePath = "/" + platform + "/shared/lib" + libName + ".so";
+        String resourcePath = "/" + platform + "/shared/" + libPrefix + libName + libExt;
         System.out.println("Attempting to load library from: " + resourcePath);
         
         try (InputStream in = PiLogger.class.getResourceAsStream(resourcePath)) {
@@ -56,7 +66,7 @@ public class PiLogger {
             // Create temp file
             File tempDir = Files.createTempDirectory("wpilib_natives").toFile();
             tempDir.deleteOnExit();
-            File tempLib = new File(tempDir, "lib" + libName + ".so");
+            File tempLib = new File(tempDir, libPrefix + libName + libExt);
             tempLib.deleteOnExit();
             
             // Extract library
