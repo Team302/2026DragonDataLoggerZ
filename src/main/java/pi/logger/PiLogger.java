@@ -18,8 +18,6 @@
 
 package pi.logger;
 
-import org.opencv.core.Core;
-
 import edu.wpi.first.cscore.CameraServerJNI;
 import edu.wpi.first.math.jni.WPIMathJNI;
 import edu.wpi.first.networktables.NetworkTablesJNI;
@@ -37,8 +35,7 @@ public class PiLogger {
         WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
         WPIMathJNI.Helper.setExtractOnStaticLoad(false);
         CameraServerJNI.Helper.setExtractOnStaticLoad(false);
-        CombinedRuntimeLoader.loadLibraries(PiLogger.class, "wpiutiljni", "wpimathjni", "ntcorejni",
-            Core.NATIVE_LIBRARY_NAME, "cscorejni");
+        CombinedRuntimeLoader.loadLibraries(PiLogger.class, "wpiutiljni", "wpimathjni", "ntcorejni");
         new PiLogger().run();
 
 
@@ -47,7 +44,7 @@ public class PiLogger {
 
     public void run() {
 
-        NtClient.start("10.0.3.2");
+        NtClient.start("localhost");
 
         MatchInfoListener.start();
         HealthPublisher.start();
@@ -67,40 +64,3 @@ public class PiLogger {
         }
     }
 }
-
-/*public class PiLogger {
-    private DataLog log;
-    private DoubleLogEntry visionLatency;
-
-    public PiLogger() {
-        // Explicitly set the path to your mounted USB folder
-        // The file will be saved as a .wpilog compatible with AdvantageScope
-        log = new DataLog("/mnt/usb_logs", "PiVisionLog.wpilog");
-        
-        // Create an entry for specific data
-        visionLatency = new DoubleLogEntry(log, "/vision/latency_ms");
-    }
-
-    public void logData(double latency) {
-        visionLatency.append(latency);
-    }
-    public class PiLogger {
-    private DataLog log;
-    private DoubleLogEntry visionLatency;
-
-    public PiLogger() {
-        // Explicitly set the path to your mounted USB folder
-        // The file will be saved as a .wpilog compatible with AdvantageScope
-        log = new DataLog("/mnt/usb_logs", "PiVisionLog.wpilog");
-        
-        // Create an entry for specific data
-        visionLatency = new DoubleLogEntry(log, "/vision/latency_ms");
-    }
-    
-    public void logData(double latency) {
-        visionLatency.append(latency);
-    }
-
-            
-    
-}*/

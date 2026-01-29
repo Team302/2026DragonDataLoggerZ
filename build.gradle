@@ -2,7 +2,7 @@ plugins {
     id "java"
     id 'application'
     id 'com.gradleup.shadow' version '8.3.5'
-    id "edu.wpi.first.GradleRIO" version "2025.1.1"
+    id "edu.wpi.first.GradleRIO" version "2026.2.1"
     id 'edu.wpi.first.WpilibTools' version '2.1.0'
 }
 
@@ -25,16 +25,24 @@ nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpiutil")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("ntcore")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
-nativeConfig.dependencies.add wpilibTools.deps.wpilibOpenCv("frc" + wpi.frcYear.get(), wpi.versions.opencvVersion.get())
 
 dependencies {
+    //implementation wpi.java.deps.wpilib()
+    //implementation wpi.java.vendor.java()
+
     implementation wpilibTools.deps.wpilibJava("wpiutil")
     implementation wpilibTools.deps.wpilibJava("wpimath")
     implementation wpilibTools.deps.wpilibJava("wpinet")
     implementation wpilibTools.deps.wpilibJava("ntcore")
     implementation wpilibTools.deps.wpilibJava("cscore")
     implementation wpilibTools.deps.wpilibJava("cameraserver")
-    implementation wpilibTools.deps.wpilibOpenCvJava("frc" + wpi.frcYear.get(), wpi.versions.opencvVersion.get())
+
+    // Add JNI libraries for runtime
+    runtimeOnly wpilibTools.deps.wpilib("wpimath")
+    runtimeOnly wpilibTools.deps.wpilib("wpinet")
+    runtimeOnly wpilibTools.deps.wpilib("wpiutil")
+    runtimeOnly wpilibTools.deps.wpilib("ntcore")
+    runtimeOnly wpilibTools.deps.wpilib("cscore")
 
     implementation group: "com.fasterxml.jackson.core", name: "jackson-annotations", version: wpi.versions.jacksonVersion.get()
     implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: wpi.versions.jacksonVersion.get()
@@ -44,12 +52,23 @@ dependencies {
     implementation group: "us.hebi.quickbuf", name: "quickbuf-runtime", version: wpi.versions.quickbufVersion.get();
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'pi.logger.PiLogger'
+    }
+}
+
 shadowJar {
     archiveBaseName = "PiLogger"
     archiveVersion = ""
     exclude("module-info.class")
     archiveClassifier.set(wpilibTools.currentPlatform.platformName)
+    manifest {
+        attributes 'Main-Class': 'pi.logger.PiLogger'
+    }
 }
+
+assemble.dependsOn shadowJar
 
 wrapper {
     gradleVersion = '8.11'
