@@ -12,22 +12,10 @@ cd /home/frc302/
 chmod +x /home/frc302/PiLogger-linuxarm64-cross.jar.sh
 
 //Systemd service file
-sudo nano /etc/systemd/system/pilogger.service
+/etc/systemd/system/pilogger.service
 
 //In the file, add the following lines:
-[Unit]
-Description=My Java Application Service
-After=multi-user.target
-
-[Service]
-Type=idle
-ExecStart=/home/frc302/PiLogger-linuxarm64-cross.jar.sh
-User=frc302
-WorkingDirectory=/home/frc302/
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+copy pilogger.service from the Pi dirctory.
 
 //Not in the file, run the following commands to enable and start the service:
 
