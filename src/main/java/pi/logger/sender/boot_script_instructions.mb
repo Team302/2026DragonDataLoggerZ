@@ -1,0 +1,74 @@
+Bash scripts
+
+nano /home/frc302/PiLogger-linuxarm64-cross.jar.sh
+
+
+//In the file, add the following lines:
+#!/bin/bash
+cd /home/frc302/
+/usr/bin/java -jar PiLogger-linuxarm64-cross.jar > /home/frc302/PiLogger-linuxarm64-cross.log 2>&1 &
+
+//Not in the file, run the following command to make the script executable:
+chmod +x /home/frc302/PiLogger-linuxarm64-cross.jar.sh
+
+//Systemd service file
+sudo nano /etc/systemd/system/pilogger.service
+
+//In the file, add the following lines:
+[Unit]
+Description=My Java Application Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/frc302/PiLogger-linuxarm64-cross.jar.sh
+User=frc302
+WorkingDirectory=/home/frc302/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+//Not in the file, run the following commands to enable and start the service:
+
+
+systemctl daemon-reload
+
+systemctl enable pilogger.service
+
+systemctl start pilogger.service
+
+//verify the service is running:
+
+systemctl status pilogger.service
+
+
+toruble shooting: 
+     pilogger.service - My Java Application Service
+     Loaded: loaded (/etc/systemd/system/pilogger.service; enabled; preset: enabled)
+     Active: failed (Result: start-limit-hit) since Sat 2026-01-31 10:29:18 EST; 38s ago
+   Duration: 73ms
+ Invocation: 51790f631bc04ab3b0efa412799dbfb0
+    Process: 1454 ExecStart=/home/frc302/PiLogger-winx64.jar.sh (code=exited, status=0/SUCCESS)
+   Main PID: 1454 (code=exited, status=0/SUCCESS)
+
+//This errors solution. 
+    //open this file 
+    sudo nano /etc/systemd/system/pilogger.service
+    //replace service with
+        [Service]
+        User=frc302
+        WorkingDirectory=/home/frc302/
+        # Call java directly using its absolute path
+        ExecStart=/usr/bin/java -jar /home/frc302/PiLogger-linuxarm64-cross.jar
+        # Add a delay to prevent rapid-fire restarts
+        Restart=always
+        RestartSec=5
+        StandardOutput=journal
+        StandardError=journal
+    //reset and apply changes.
+    sudo systemctl reset-failed pilogger.service
+    sudo systemctl daemon-reload
+    sudo systemctl start pilogger.service
+    //verify
+    sudo systemctl status pilogger.service
