@@ -18,27 +18,99 @@
 
 package pi.logger;
 
-import org.opencv.core.Core;
-
-import edu.wpi.first.cscore.CameraServerJNI;
-import edu.wpi.first.math.jni.WPIMathJNI;
 import edu.wpi.first.networktables.NetworkTablesJNI;
-import edu.wpi.first.util.CombinedRuntimeLoader;
+import edu.wpi.first.math.jni.WPIMathJNI;
 import edu.wpi.first.util.WPIUtilJNI;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 //import edu.wpi.first.util.datalog.DoubleLogEntry;
 //import edu.wpi.first.util.datalog.DataLog;
 //import edu.wpi.first.util.datalog.WPILOGWriter;
 
 public class PiLogger {
+    
+    private static void extractAndLoadLibrary(String libName) throws IOException {
+        String osName = System.getProperty("os.name").toLowerCase();
+        String osArch = System.getProperty("os.arch");
+        String platform;
+        String libPrefix;
+        String libExt;
+        
+        if (osName.contains("win")) {
+            platform = "windows/x86-64";
+            libPrefix = "";
+            libExt = ".dll";
+        } else if (osArch.contains("aarch64") || osArch.contains("arm64")) {
+            platform = "linux/arm64";
+            libPrefix = "lib";
+            libExt = ".so";
+        } else {
+            platform = "linux/x86-64";
+            libPrefix = "lib";
+            libExt = ".so";
+        }
+        
+        String resourcePath = "/" + platform + "/shared/" + libPrefix + libName + libExt;
+        System.out.println("Attempting to load library from: " + resourcePath);
+        
+        try (InputStream in = PiLogger.class.getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IOException("Library not found in JAR: " + resourcePath);
+            }
+            
+            // Create temp file
+            File tempDir = Files.createTempDirectory("wpilib_natives").toFile();
+            tempDir.deleteOnExit();
+            File tempLib = new File(tempDir, libPrefix + libName + libExt);
+            tempLib.deleteOnExit();
+            
+            // Extract library
+            try (FileOutputStream out = new FileOutputStream(tempLib)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+            
+            // Load library
+            System.load(tempLib.getAbsolutePath());
+            System.out.println("Successfully loaded: " + libName);
+        }
+    }
+    
     public static void main(String[] args) throws Exception {
         System.out.println("Pi logger starting");
+        
+        // Disable automatic extraction - we load manually
         NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
-        WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
         WPIMathJNI.Helper.setExtractOnStaticLoad(false);
-        CameraServerJNI.Helper.setExtractOnStaticLoad(false);
-        CombinedRuntimeLoader.loadLibraries(PiLogger.class, "wpiutiljni", "wpimathjni", "ntcorejni",
-            Core.NATIVE_LIBRARY_NAME, "cscorejni");
+        WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
+        
+        // Manually extract and load libraries in dependency order
+        // Base libraries first, then their JNI wrappers
+        try {
+            extractAndLoadLibrary("wpiutil");
+            extractAndLoadLibrary("wpiutiljni");
+            
+            extractAndLoadLibrary("wpinet");
+            
+            extractAndLoadLibrary("wpimath");
+            extractAndLoadLibrary("wpimathjni");
+            
+            extractAndLoadLibrary("ntcore");
+            extractAndLoadLibrary("ntcorejni");
+        } catch (IOException e) {
+            System.err.println("Failed to load native libraries: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+        
         new PiLogger().run();
 
 
@@ -47,7 +119,7 @@ public class PiLogger {
 
     public void run() {
 
-        NtClient.start("10.0.3.2");
+        NtClient.start("localhost");
 
         MatchInfoListener.start();
         HealthPublisher.start();
@@ -67,40 +139,3 @@ public class PiLogger {
         }
     }
 }
-
-/*public class PiLogger {
-    private DataLog log;
-    private DoubleLogEntry visionLatency;
-
-    public PiLogger() {
-        // Explicitly set the path to your mounted USB folder
-        // The file will be saved as a .wpilog compatible with AdvantageScope
-        log = new DataLog("/mnt/usb_logs", "PiVisionLog.wpilog");
-        
-        // Create an entry for specific data
-        visionLatency = new DoubleLogEntry(log, "/vision/latency_ms");
-    }
-
-    public void logData(double latency) {
-        visionLatency.append(latency);
-    }
-    public class PiLogger {
-    private DataLog log;
-    private DoubleLogEntry visionLatency;
-
-    public PiLogger() {
-        // Explicitly set the path to your mounted USB folder
-        // The file will be saved as a .wpilog compatible with AdvantageScope
-        log = new DataLog("/mnt/usb_logs", "PiVisionLog.wpilog");
-        
-        // Create an entry for specific data
-        visionLatency = new DoubleLogEntry(log, "/vision/latency_ms");
-    }
-    
-    public void logData(double latency) {
-        visionLatency.append(latency);
-    }
-
-            
-    
-}*/
