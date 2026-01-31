@@ -17,6 +17,7 @@ public final class UdpReceiver {
 
     private static volatile boolean running = true;
     private static volatile DatagramSocket socket = null;
+    private static volatile long messagesProcessed = 0;
 
     private UdpReceiver() {}
 
@@ -41,6 +42,10 @@ public final class UdpReceiver {
 
     public static BlockingQueue<UdpMessage> getQueue() {
         return queue;
+    }
+
+    public static long getMessagesProcessed() {
+        return messagesProcessed;
     }
 
     private static void run() {
@@ -74,12 +79,12 @@ public final class UdpReceiver {
 
                 UdpMessage msg = new UdpMessage(
                         timestamp,
-                        packet.getAddress().getHostAddress(),
-                        packet.getPort(),
                         payload
                 );
 
-                queue.offer(msg); // non-blocking
+                if (queue.offer(msg)) { // non-blocking
+                    messagesProcessed++;
+                }
             }
         } catch (SocketException e) {
             // Expected when socket is closed by stop()

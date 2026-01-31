@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -64,16 +63,15 @@ public final class USBFileLogger {
         byte[] payload = msg.payload();
 
         // Record format:
-        // [timestamp_ns][payload_len][payload]
-        ByteBuffer header = ByteBuffer.allocate(16);
-        header.putLong(msg.timestampNs());
-        header.putInt(payload.length);
-        header.putInt(0); // reserved / future flags
+        // [timestamp_ms],[payload]
+        long timestampMs = msg.timestampNs() / 1_000_000;
+        String timestampStr = timestampMs + ",";
 
-        out.write(header.array());
+        out.write(timestampStr.getBytes());
         out.write(payload);
+        out.write("\n".getBytes());
 
-        bytesWritten += header.capacity() + payload.length;
+        bytesWritten += timestampStr.length() + payload.length + 1;
     }
 
     private static boolean shouldRotate() {

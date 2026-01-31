@@ -13,6 +13,8 @@ public final class HealthPublisher {
 
     private HealthPublisher() {}
 
+    private static long heartbeat = 0;
+
     public static void start() {
         NetworkTable table =
                 NtClient.get().getTable("pi");
@@ -25,6 +27,10 @@ public final class HealthPublisher {
                 table.getEntry("diskFreeMB");
         NetworkTableEntry cpuLoad =
                 table.getEntry("cpuLoad");
+        NetworkTableEntry heartbeatEntry =
+                table.getEntry("heartbeat");
+        NetworkTableEntry messagesProcessedEntry =
+                table.getEntry("messagesProcessed");
 
         connected.setBoolean(true);
 
@@ -34,8 +40,14 @@ public final class HealthPublisher {
             return t;
         }).scheduleAtFixedRate(() -> {
             try {
+                heartbeat++;
+                heartbeatEntry.setInteger(heartbeat);
+
                 queueDepth.setInteger(
                         UdpReceiver.getQueue().size());
+
+                messagesProcessedEntry.setInteger(
+                        UdpReceiver.getMessagesProcessed());
 
                 diskFree.setDouble(getDiskFreeMB("/mnt/usb_logs"));
 
@@ -55,7 +67,7 @@ public final class HealthPublisher {
                 (com.sun.management.OperatingSystemMXBean)
                         ManagementFactory.getOperatingSystemMXBean();
 
-        return os.getSystemCpuLoad(); // 0.0–1.0
+        return os.getCpuLoad(); // 0.0–1.0
     }
 }
 
