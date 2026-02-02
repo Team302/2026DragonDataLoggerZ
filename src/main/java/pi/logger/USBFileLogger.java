@@ -9,7 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.util.datalog.DataLogWriter;
+import edu.wpi.first.util.datalog.StructLogEntry;
 
 public final class USBFileLogger {
 
@@ -25,6 +27,9 @@ public final class USBFileLogger {
 
     // Cache of entry IDs by entry name
     private static final Map<String, Integer> entryIds = new HashMap<>();
+    
+    // Cache of struct log entries
+    private static final Map<String, StructLogEntry<Pose2d>> structEntries = new HashMap<>();
 
     private USBFileLogger() {}
 
@@ -36,6 +41,92 @@ public final class USBFileLogger {
 
     public static void stop() {
         running = false;
+    }
+
+    /**
+     * Log a double value from an external source (e.g., NetworkTables)
+     */
+    public static void logDouble(String name, double value, long timestampUs) {
+        if (dataLog == null) return;
+        
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "double")
+            );
+            dataLog.appendDouble(entryId, value, timestampUs);
+        }
+    }
+
+    /**
+     * Log an integer value from an external source
+     */
+    public static void logInteger(String name, long value, long timestampUs) {
+        if (dataLog == null) return;
+        
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "int64")
+            );
+            dataLog.appendInteger(entryId, value, timestampUs);
+        }
+    }
+
+    /**
+     * Log a boolean value from an external source
+     */
+    public static void logBoolean(String name, boolean value, long timestampUs) {
+        if (dataLog == null) return;
+        
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "boolean")
+            );
+            dataLog.appendBoolean(entryId, value, timestampUs);
+        }
+    }
+
+    /**
+     * Log a string value from an external source
+     */
+    public static void logString(String name, String value, long timestampUs) {
+        if (dataLog == null) return;
+        
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "string")
+            );
+            dataLog.appendString(entryId, value, timestampUs);
+        }
+    }
+
+    /**
+     * Log a Pose2d struct from an external source (e.g., NetworkTables)
+     */
+    public static void logStruct(String name, Pose2d value, long timestampUs) {
+        if (dataLog == null) return;
+
+        System.out.println("Logging struct: " + name + " at " + timestampUs);
+        
+        synchronized (structEntries) {
+            StructLogEntry<Pose2d> entry = structEntries.computeIfAbsent(
+                name,
+                k -> StructLogEntry.create(dataLog, k, Pose2d.struct)
+            );
+            entry.append(value, timestampUs);
+        }
+    }
+
+    /**
+     * Flush the log to disk
+     */
+    public static void flush() {
+        if (dataLog != null) {
+            dataLog.flush();
+        }
     }
 
     private static void run() {
@@ -72,7 +163,11 @@ public final class USBFileLogger {
                 return;
             }
 
-            long timestampUs = msg.timestampNs() / 1000;
+            // Parse timestamp from message payload (parts[0]). The sender may send
+            // seconds (floating), milliseconds, or microseconds. Fall back to
+            // receive time if parsing fails.
+            long timestampUs = parseTimestampToMicros(parts[0].trim(), msg.timestampNs());
+
             String signalID = parts[1].trim();
             String type = parts[2].trim();
             String value = parts[3].trim();
@@ -171,6 +266,7 @@ public final class USBFileLogger {
 
     private static void clearEntryCache() {
         entryIds.clear();
+        structEntries.clear();
     }
 
     private static void closeQuietly() {
