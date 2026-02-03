@@ -25,11 +25,6 @@ public final class USBFileLogger {
     private static File currentFile;
     private static long fileStartTime;
 
-    // Capture base mapping between System.nanoTime() and epoch microseconds so
-    // we can convert receive-time nano timestamps to epoch-based microseconds.
-    private static final long NANO_BASE = System.nanoTime();
-    private static final long EPOCH_MICROS_BASE = System.currentTimeMillis() * 1000L;
-
     // Cache of entry IDs by entry name
     private static final Map<String, Integer> entryIds = new HashMap<>();
     
@@ -113,8 +108,6 @@ public final class USBFileLogger {
      */
     public static void logStruct(String name, Pose2d value, long timestampUs) {
         if (dataLog == null) return;
-
-        System.out.println("Logging struct: " + name + " at 0");
         
         synchronized (structEntries) {
             StructLogEntry<Pose2d> entry = structEntries.computeIfAbsent(
@@ -254,6 +247,16 @@ public final class USBFileLogger {
             currentFile = new File(LOG_DIR, name);
 
             dataLog = new DataLogWriter(currentFile.getAbsolutePath());
+
+            // Write a start-time entry at timestamp 0. Populate it with the
+            // current epoch microseconds so viewers that compute relative time
+            // (entry_time - start_time) will show 0 at the beginning of the file.
+            try {
+                long startEpochMicros = System.currentTimeMillis() * 1000L;
+                int startEntryId = dataLog.start(".startTime", "int64");
+                dataLog.appendInteger(startEntryId, startEpochMicros, 0L);
+                dataLog.flush();
+            } catch (Exception ignored) {}
 
             fileStartTime = System.currentTimeMillis();
 
