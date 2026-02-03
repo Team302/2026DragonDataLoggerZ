@@ -25,6 +25,11 @@ public final class USBFileLogger {
     private static File currentFile;
     private static long fileStartTime;
 
+    // Capture base mapping between System.nanoTime() and epoch microseconds so
+    // we can convert receive-time nano timestamps to epoch-based microseconds.
+    private static final long NANO_BASE = System.nanoTime();
+    private static final long EPOCH_MICROS_BASE = System.currentTimeMillis() * 1000L;
+
     // Cache of entry IDs by entry name
     private static final Map<String, Integer> entryIds = new HashMap<>();
     
@@ -54,7 +59,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "double")
             );
-            dataLog.appendDouble(entryId, value, timestampUs);
+            dataLog.appendDouble(entryId, value, 0);
         }
     }
 
@@ -69,7 +74,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "int64")
             );
-            dataLog.appendInteger(entryId, value, timestampUs);
+            dataLog.appendInteger(entryId, value, 0);
         }
     }
 
@@ -84,7 +89,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "boolean")
             );
-            dataLog.appendBoolean(entryId, value, timestampUs);
+            dataLog.appendBoolean(entryId, value, 0);
         }
     }
 
@@ -99,7 +104,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "string")
             );
-            dataLog.appendString(entryId, value, timestampUs);
+            dataLog.appendString(entryId, value, 0);
         }
     }
 
@@ -109,14 +114,14 @@ public final class USBFileLogger {
     public static void logStruct(String name, Pose2d value, long timestampUs) {
         if (dataLog == null) return;
 
-        System.out.println("Logging struct: " + name + " at " + timestampUs);
+        System.out.println("Logging struct: " + name + " at 0");
         
         synchronized (structEntries) {
             StructLogEntry<Pose2d> entry = structEntries.computeIfAbsent(
                 name,
                 k -> StructLogEntry.create(dataLog, k, Pose2d.struct)
             );
-            entry.append(value, timestampUs);
+            entry.append(value, 0);
         }
     }
 
@@ -163,11 +168,6 @@ public final class USBFileLogger {
                 return;
             }
 
-            // Parse timestamp from message payload (parts[0]). The sender may send
-            // seconds (floating), milliseconds, or microseconds. Fall back to
-            // receive time if parsing fails.
-            long timestampUs = parseTimestampToMicros(parts[0].trim(), msg.timestampNs());
-
             String signalID = parts[1].trim();
             String type = parts[2].trim();
             String value = parts[3].trim();
@@ -185,7 +185,7 @@ public final class USBFileLogger {
                             entryName,
                             k -> dataLog.start(k, "double")
                         );
-                        dataLog.appendDouble(entryId, doubleValue, timestampUs);
+                        dataLog.appendDouble(entryId, doubleValue, 0);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse double: " + value);
                     }
@@ -197,7 +197,7 @@ public final class USBFileLogger {
                             entryName,
                             k -> dataLog.start(k, "int64")
                         );
-                        dataLog.appendInteger(entryId, intValue, timestampUs);
+                        dataLog.appendInteger(entryId, intValue, 0);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse integer: " + value);
                     }
@@ -208,14 +208,14 @@ public final class USBFileLogger {
                         entryName,
                         k -> dataLog.start(k, "boolean")
                     );
-                    dataLog.appendBoolean(entryId, boolValue, timestampUs);
+                    dataLog.appendBoolean(entryId, boolValue, 0);
                 }
                 case "string", "str" -> {
                     int entryId = entryIds.computeIfAbsent(
                         entryName,
                         k -> dataLog.start(k, "string")
                     );
-                    dataLog.appendString(entryId, value, timestampUs);
+                    dataLog.appendString(entryId, value, 0);
                 }
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
@@ -224,7 +224,7 @@ public final class USBFileLogger {
                         entryName,
                         k -> dataLog.start(k, "string")
                     );
-                    dataLog.appendString(entryId, value, timestampUs);
+                    dataLog.appendString(entryId, value, 0);
                 }
             }
 
