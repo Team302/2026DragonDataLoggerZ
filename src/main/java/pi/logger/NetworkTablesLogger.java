@@ -56,10 +56,9 @@ public final class NetworkTablesLogger {
             Pose2d pose = poseSubscriber.get();
             
             if (pose != null) {
-                long timestampUs = poseSubscriber.getLastChange();
                 
                 // Log the entire Pose2d struct using USBFileLogger
-                USBFileLogger.logStruct("DriveState/Pose", pose, timestampUs);
+                USBFileLogger.logStruct("DriveState/Pose", pose);
                 
                 USBFileLogger.flush();
             

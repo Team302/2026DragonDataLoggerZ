@@ -46,7 +46,7 @@ public final class USBFileLogger {
     /**
      * Log a double value from an external source (e.g., NetworkTables)
      */
-    public static void logDouble(String name, double value, long timestampUs) {
+    public static void logDouble(String name, double value) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -61,7 +61,7 @@ public final class USBFileLogger {
     /**
      * Log an integer value from an external source
      */
-    public static void logInteger(String name, long value, long timestampUs) {
+    public static void logInteger(String name, long value) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -76,7 +76,7 @@ public final class USBFileLogger {
     /**
      * Log a boolean value from an external source
      */
-    public static void logBoolean(String name, boolean value, long timestampUs) {
+    public static void logBoolean(String name, boolean value) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -91,7 +91,7 @@ public final class USBFileLogger {
     /**
      * Log a string value from an external source
      */
-    public static void logString(String name, String value, long timestampUs) {
+    public static void logString(String name, String value) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -106,7 +106,7 @@ public final class USBFileLogger {
     /**
      * Log a Pose2d struct from an external source (e.g., NetworkTables)
      */
-    public static void logStruct(String name, Pose2d value, long timestampUs) {
+    public static void logStruct(String name, Pose2d value) {
         if (dataLog == null) return;
         
         synchronized (structEntries) {
