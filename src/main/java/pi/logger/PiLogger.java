@@ -126,6 +126,7 @@ public class PiLogger {
 
         UdpReceiver.start();
         USBFileLogger.start();
+        NetworkTablesLogger.start();
 
         System.out.println("Pi logger running");
 
