@@ -1,6 +1,7 @@
 package pi.logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.structs.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructSubscriber;
@@ -11,6 +12,7 @@ public final class NetworkTablesLogger {
     
     // Subscribers
     private static StructSubscriber<Pose2d> poseSubscriber;
+    private static StructSubscriber<ChassisSpeeds> chassisSpeedsSubscriber;
 
     private NetworkTablesLogger() {}
 
@@ -32,12 +34,15 @@ public final class NetworkTablesLogger {
             // Subscribe to Pose2D
             NetworkTable driveStateTable = inst.getTable("DriveState");
             poseSubscriber = driveStateTable.getStructTopic("Pose", Pose2d.struct).subscribe(new Pose2d());
+            chassisSpeedsSubscriber = driveStateTable.getStructTopic("Speeds", ChassisSpeeds.struct).subscribe(new ChassisSpeeds());
 
             System.out.println("NetworkTables logger started");
 
             while (running) {
                 // Log Pose2D
                 logPose2D();
+                // Log chassis speeds
+                logChassisSpeeds();
 
                 // Update rate: 50Hz
                 Thread.sleep(20);
@@ -59,12 +64,21 @@ public final class NetworkTablesLogger {
                 
                 // Log the entire Pose2d struct using USBFileLogger
                 USBFileLogger.logStruct("DriveState/Pose", pose);
-                
-                USBFileLogger.flush();
             
             }
         } catch (Exception e) {
             System.err.println("Error logging Pose2D: " + e.getMessage());
+        }
+    }
+
+    private static void logChassisSpeeds() {
+        try {
+            ChassisSpeeds speeds = chassisSpeedsSubscriber.get();
+            if (speeds != null) {
+                USBFileLogger.logStruct("DriveState/ChassisSpeeds", speeds);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging ChassisSpeeds: " + e.getMessage());
         }
     }
 
