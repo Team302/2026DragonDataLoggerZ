@@ -75,7 +75,6 @@ public final class NetworkTablesLogger {
         try {
             ChassisSpeeds speeds = chassisSpeedsSubscriber.get();
             if (speeds != null) {
-                System.out.println(speeds.toString());
                 USBFileLogger.logStruct("DriveState/ChassisSpeeds", speeds);
             }
         } catch (Exception e) {
