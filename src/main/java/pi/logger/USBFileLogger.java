@@ -64,7 +64,7 @@ public final class USBFileLogger {
      */
     public static void logInteger(String name, long value) {
         if (dataLog == null) return;
-        
+
         synchronized (entryIds) {
             int entryId = entryIds.computeIfAbsent(
                 name,
@@ -131,6 +131,40 @@ public final class USBFileLogger {
             StructLogEntry<ChassisSpeeds> entry = (StructLogEntry<ChassisSpeeds>) structEntries.computeIfAbsent(
                 name,
                 k -> StructLogEntry.create(dataLog, k, ChassisSpeeds.struct)
+            );
+            entry.append(value, 0);
+            dataLog.flush();
+        }
+    }
+
+    /**
+     * Log a SwerveModulePosition struct
+     */
+    public static void logStruct(String name, pi.logger.structs.SwerveModulePosition value) {
+        if (dataLog == null) return;
+
+        synchronized (structEntries) {
+            @SuppressWarnings("unchecked")
+            StructLogEntry<pi.logger.structs.SwerveModulePosition> entry = (StructLogEntry<pi.logger.structs.SwerveModulePosition>) structEntries.computeIfAbsent(
+                name,
+                k -> StructLogEntry.create(dataLog, k, pi.logger.structs.SwerveModulePosition.struct)
+            );
+            entry.append(value, 0);
+            dataLog.flush();
+        }
+    }
+
+    /**
+     * Log a SwerveModuleState struct
+     */
+    public static void logStruct(String name, pi.logger.structs.SwerveModuleState value) {
+        if (dataLog == null) return;
+
+        synchronized (structEntries) {
+            @SuppressWarnings("unchecked")
+            StructLogEntry<pi.logger.structs.SwerveModuleState> entry = (StructLogEntry<pi.logger.structs.SwerveModuleState>) structEntries.computeIfAbsent(
+                name,
+                k -> StructLogEntry.create(dataLog, k, pi.logger.structs.SwerveModuleState.struct)
             );
             entry.append(value, 0);
             dataLog.flush();
