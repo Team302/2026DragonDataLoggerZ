@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.structs.ChassisSpeeds;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 
@@ -28,8 +29,8 @@ public final class USBFileLogger {
     // Cache of entry IDs by entry name
     private static final Map<String, Integer> entryIds = new HashMap<>();
     
-    // Cache of struct log entries
-    private static final Map<String, StructLogEntry<Pose2d>> structEntries = new HashMap<>();
+    // Cache of struct log entries (support multiple struct types)
+    private static final Map<String, StructLogEntry<?>> structEntries = new HashMap<>();
 
     private USBFileLogger() {}
 
@@ -108,13 +109,31 @@ public final class USBFileLogger {
      */
     public static void logStruct(String name, Pose2d value) {
         if (dataLog == null) return;
-        
         synchronized (structEntries) {
-            StructLogEntry<Pose2d> entry = structEntries.computeIfAbsent(
+            @SuppressWarnings("unchecked")
+            StructLogEntry<Pose2d> entry = (StructLogEntry<Pose2d>) structEntries.computeIfAbsent(
                 name,
                 k -> StructLogEntry.create(dataLog, k, Pose2d.struct)
             );
             entry.append(value, 0);
+            dataLog.flush();
+        }
+    }
+
+    /**
+     * Log a ChassisSpeeds struct
+     */
+    public static void logStruct(String name, ChassisSpeeds value) {
+        if (dataLog == null) return;
+
+        synchronized (structEntries) {
+            @SuppressWarnings("unchecked")
+            StructLogEntry<ChassisSpeeds> entry = (StructLogEntry<ChassisSpeeds>) structEntries.computeIfAbsent(
+                name,
+                k -> StructLogEntry.create(dataLog, k, ChassisSpeeds.struct)
+            );
+            entry.append(value, 0);
+            dataLog.flush();
         }
     }
 
