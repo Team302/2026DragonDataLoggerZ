@@ -29,20 +29,6 @@ toruble shooting:
     Process: 1454 ExecStart=/home/frc302/PiLogger-linuxarm64-cross.jar.sh (code=exited, status=0/SUCCESS)
    Main PID: 1454 (code=exited, status=0/SUCCESS)
 
-//This errors solution. 
-    //open this file 
-    sudo nano /etc/systemd/system/pilogger.service
-    //replace service with
-        [Service]
-        User=frc302
-        WorkingDirectory=/home/frc302/
-        # Call java directly using its absolute path
-        ExecStart=/usr/bin/java -jar /home/frc302/PiLogger-linuxarm64-cross.jar
-        # Add a delay to prevent rapid-fire restarts
-        Restart=always
-        RestartSec=5
-        StandardOutput=journal
-        StandardError=journal
     //reset and apply changes.
     sudo systemctl reset-failed pilogger.service
     sudo systemctl daemon-reload
