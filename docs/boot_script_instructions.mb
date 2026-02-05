@@ -1,16 +1,5 @@
 Bash scripts
 
-nano /home/frc302/PiLogger-linuxarm64-cross.jar.sh
-
-
-//In the file, add the following lines:
-#!/bin/bash
-cd /home/frc302/
-/usr/bin/java -jar PiLogger-linuxarm64-cross.jar > /home/frc302/PiLogger-linuxarm64-cross.log 2>&1 &
-
-//Not in the file, run the following command to make the script executable:
-chmod +x /home/frc302/PiLogger-linuxarm64-cross.jar.sh
-
 //Systemd service file
 /etc/systemd/system/pilogger.service
 
