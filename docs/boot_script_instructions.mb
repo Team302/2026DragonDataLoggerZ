@@ -20,7 +20,7 @@ systemctl start pilogger.service
 systemctl status pilogger.service
 
 
-toruble shooting: 
+troubleshooting: 
      pilogger.service - My Java Application Service
      Loaded: loaded (/etc/systemd/system/pilogger.service; enabled; preset: enabled)
      Active: failed (Result: start-limit-hit) since Sat 2026-01-31 10:29:18 EST; 38s ago
