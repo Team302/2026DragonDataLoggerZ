@@ -1,18 +1,34 @@
 package pi.logger;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.structs.ChassisSpeeds;
+import pi.logger.structs.SwerveModulePosition;
+import pi.logger.structs.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArraySubscriber;
 import edu.wpi.first.networktables.StructSubscriber;
+import edu.wpi.first.networktables.Topic;
+import edu.wpi.first.networktables.TopicInfo;
 
 public final class NetworkTablesLogger {
     
     private static volatile boolean running = true;
+    private static final int SWERVE_MODULE_COUNT = 4;
+    private static final long TOPIC_DUMP_INTERVAL_MS = 5000; // 5 seconds
+    private static long lastTopicDumpMs = 0;
     
     // Subscribers
     private static StructSubscriber<Pose2d> poseSubscriber;
     private static StructSubscriber<ChassisSpeeds> chassisSpeedsSubscriber;
+    private static StructArraySubscriber<SwerveModulePosition> modulePositionsSubscriber;
+    private static StructArraySubscriber<SwerveModuleState> moduleStatesSubscriber;
+    private static StructArraySubscriber<SwerveModuleState> moduleTargetsSubscriber;
+    // DriveState table reference used for simple entries (e.g., doubles)
+    private static NetworkTable driveStateTable;
 
     private NetworkTablesLogger() {}
 
@@ -31,18 +47,36 @@ public final class NetworkTablesLogger {
             // Subscribe to NetworkTables topics
             NetworkTableInstance inst = NtClient.get();
             
-            // Subscribe to Pose2D
-            NetworkTable driveStateTable = inst.getTable("DriveState");
+            // Subscribe to DriveState topics
+            driveStateTable = inst.getTable("DriveState");
             poseSubscriber = driveStateTable.getStructTopic("Pose", Pose2d.struct).subscribe(new Pose2d());
             chassisSpeedsSubscriber = driveStateTable.getStructTopic("Speeds", ChassisSpeeds.struct).subscribe(new ChassisSpeeds());
+            modulePositionsSubscriber = driveStateTable
+                .getStructArrayTopic("ModulePositions", SwerveModulePosition.struct)
+                .subscribe(createDefaultModulePositions());
+            moduleStatesSubscriber = driveStateTable
+                .getStructArrayTopic("ModuleStates", SwerveModuleState.struct)
+                .subscribe(createDefaultModuleStates());
+            moduleTargetsSubscriber = driveStateTable
+                .getStructArrayTopic("ModuleTargets", SwerveModuleState.struct)
+                .subscribe(createDefaultModuleStates());
 
             System.out.println("NetworkTables logger started");
 
             while (running) {
+                dumpTopicsPeriodically(inst);
                 // Log Pose2D
                 logPose2D();
                 // Log chassis speeds
                 logChassisSpeeds();
+                // Log module states
+                logModuleStates();
+                // Log odometry frequency
+                logOdometryFrequency();
+                // Log module positions
+                logModulePositions();
+                // Log module targets
+                logModuleTargets();
 
                 // Update rate: 50Hz
                 Thread.sleep(20);
@@ -82,9 +116,114 @@ public final class NetworkTablesLogger {
         }
     }
 
+    private static void logModulePositions() {
+        try {
+            SwerveModulePosition[] positions = modulePositionsSubscriber.get();
+            if (positions != null && positions.length > 0) {
+                USBFileLogger.logStructArray("DriveState/ModulePositions", positions, SwerveModulePosition.struct);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging ModulePositions: " + e.getMessage());
+        }
+    }
+
+    private static void logOdometryFrequency() {
+        try {
+            if (driveStateTable == null) return;
+            double freq = driveStateTable.getEntry("OdometryFrequency").getDouble(Double.NaN);
+            if (!Double.isNaN(freq)) {
+                USBFileLogger.logDouble("DriveState/OdometryFrequency", freq);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging OdometryFrequency: " + e.getMessage());
+        }
+    }
+
+    private static void logModuleStates() {
+        try {
+            SwerveModuleState[] states = moduleStatesSubscriber.get();
+            if (states != null && states.length > 0) {
+                USBFileLogger.logStructArray("DriveState/ModuleStates", states, SwerveModuleState.struct);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging ModuleStates: " + e.getMessage());
+        }
+    }
+
+    private static void logModuleTargets() {
+        try {
+            SwerveModuleState[] targets = moduleTargetsSubscriber.get();
+            if (targets != null && targets.length > 0) {
+                USBFileLogger.logStructArray("DriveState/ModuleTargets", targets, SwerveModuleState.struct);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging ModuleTargets: " + e.getMessage());
+        }
+    }
+
+    private static SwerveModulePosition[] createDefaultModulePositions() {
+        SwerveModulePosition[] defaults = new SwerveModulePosition[SWERVE_MODULE_COUNT];
+        for (int i = 0; i < SWERVE_MODULE_COUNT; i++) {
+            defaults[i] = new SwerveModulePosition();
+        }
+        return defaults;
+    }
+
+    private static SwerveModuleState[] createDefaultModuleStates() {
+        SwerveModuleState[] defaults = new SwerveModuleState[SWERVE_MODULE_COUNT];
+        for (int i = 0; i < SWERVE_MODULE_COUNT; i++) {
+            defaults[i] = new SwerveModuleState();
+        }
+        return defaults;
+    }
+
     private static void closeSubs() {
         if (poseSubscriber != null) {
             poseSubscriber.close();
         }
+        if (chassisSpeedsSubscriber != null) {
+            chassisSpeedsSubscriber.close();
+        }
+        if (modulePositionsSubscriber != null) {
+            modulePositionsSubscriber.close();
+        }
+        if (moduleStatesSubscriber != null) {
+            moduleStatesSubscriber.close();
+        }
+        if (moduleTargetsSubscriber != null) {
+            moduleTargetsSubscriber.close();
+        }
     }
+
+    private static void dumpAllNetworkTableKeys(NetworkTableInstance inst) {
+        try {
+            Topic[] topics = inst.getTopics();
+            TopicInfo[] infos = inst.getTopicInfo();
+            Map<String, TopicInfo> infoByName = new HashMap<>();
+            for (TopicInfo info : infos) {
+                infoByName.put(info.name, info);
+            }
+            System.out.println("---- NetworkTables Topics (" + topics.length + ") ----");
+            for (Topic topic : topics) {
+                TopicInfo info = infoByName.get(topic.getName());
+        String typeLabel = (info != null && info.typeStr != null && !info.typeStr.isBlank())
+            ? info.typeStr
+            : topic.getType().toString();
+                System.out.printf("%s (type=%s)%n", topic.getName(), typeLabel);
+            }
+            System.out.println("---- End NetworkTables Topics ----");
+        } catch (Exception e) {
+            System.err.println("Failed to enumerate NetworkTables topics: " + e.getMessage());
+        }
+    }
+
+    private static void dumpTopicsPeriodically(NetworkTableInstance inst) {
+        long now = System.currentTimeMillis();
+        if (now - lastTopicDumpMs >= TOPIC_DUMP_INTERVAL_MS) {
+            dumpAllNetworkTableKeys(inst);
+            lastTopicDumpMs = now;
+        }
+    }
+
+
 }

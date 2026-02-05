@@ -111,15 +111,16 @@ public class PiLogger {
             throw e;
         }
         
-        new PiLogger().run();
+    new PiLogger().run(args);
 
 
 
     }
 
-    public void run() {
+    public void run(String[] args) {
 
-        NtClient.start("localhost");
+        String serverOverride = (args != null && args.length > 0) ? args[0] : null;
+        NtClient.start(serverOverride);
 
         MatchInfoListener.start();
         HealthPublisher.start();
