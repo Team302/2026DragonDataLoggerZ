@@ -15,7 +15,7 @@ chmod +x /home/frc302/PiLogger-linuxarm64-cross.jar.sh
 /etc/systemd/system/pilogger.service
 
 //In the file, add the following lines:
-copy pilogger.service from the Pi dirctory.
+copy pilogger.service from the Pi directory.
 
 //Not in the file, run the following commands to enable and start the service:
 
