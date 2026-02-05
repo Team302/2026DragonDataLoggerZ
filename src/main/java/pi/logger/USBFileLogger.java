@@ -13,6 +13,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.structs.ChassisSpeeds;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
+import edu.wpi.first.util.datalog.StructArrayLogEntry;
+import edu.wpi.first.util.struct.Struct;
 
 public final class USBFileLogger {
 
@@ -31,6 +33,7 @@ public final class USBFileLogger {
     
     // Cache of struct log entries (support multiple struct types)
     private static final Map<String, StructLogEntry<?>> structEntries = new HashMap<>();
+    private static final Map<String, StructArrayLogEntry<?>> structArrayEntries = new HashMap<>();
 
     private USBFileLogger() {}
 
@@ -167,6 +170,20 @@ public final class USBFileLogger {
                 k -> StructLogEntry.create(dataLog, k, pi.logger.structs.SwerveModuleState.struct)
             );
             entry.append(value, 0);
+            dataLog.flush();
+        }
+    }
+
+    public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct) {
+        if (dataLog == null || values == null) return;
+
+        synchronized (structArrayEntries) {
+            @SuppressWarnings("unchecked")
+            StructArrayLogEntry<T> entry = (StructArrayLogEntry<T>) structArrayEntries.computeIfAbsent(
+                name,
+                k -> StructArrayLogEntry.create(dataLog, k, elementStruct)
+            );
+            entry.append(values, 0);
             dataLog.flush();
         }
     }
@@ -323,6 +340,7 @@ public final class USBFileLogger {
     private static void clearEntryCache() {
         entryIds.clear();
         structEntries.clear();
+        structArrayEntries.clear();
     }
 
     private static void closeQuietly() {
