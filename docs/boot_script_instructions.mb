@@ -4,7 +4,7 @@ Bash scripts
 /etc/systemd/system/pilogger.service
 
 //In the file, add the following lines:
-copy pilogger.service from the Pi dirctory.
+copy pilogger.service from the Pi directory.
 
 //Not in the file, run the following commands to enable and start the service:
 
@@ -26,7 +26,7 @@ toruble shooting:
      Active: failed (Result: start-limit-hit) since Sat 2026-01-31 10:29:18 EST; 38s ago
    Duration: 73ms
  Invocation: 51790f631bc04ab3b0efa412799dbfb0
-    Process: 1454 ExecStart=/home/frc302/PiLogger-winx64.jar.sh (code=exited, status=0/SUCCESS)
+    Process: 1454 ExecStart=/home/frc302/PiLogger-linuxarm64-cross.jar.sh (code=exited, status=0/SUCCESS)
    Main PID: 1454 (code=exited, status=0/SUCCESS)
 
 //This errors solution. 
