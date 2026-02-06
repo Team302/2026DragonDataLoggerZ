@@ -15,7 +15,6 @@
 //====================================================================================================================================================
  * Based on https://docs.wpilib.org/en/stable/docs/software/networktables/client-side-program.html
  */
-
 package pi.logger;
 
 import edu.wpi.first.networktables.NetworkTablesJNI;
