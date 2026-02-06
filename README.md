@@ -30,20 +30,20 @@ This program turns a small computer (like a Raspberry Pi) into a black box for o
 1. Build the project with `./gradlew build` (or `./build.bat` on Windows).
 2. Test the project on Windows using run.bat (this will start udp listening locally)
 3. If deploying to the pi, run build-pi.bat. This will create a jar in the build/libs folder called PiLogger-linuxarm64-cross.jar
-2. Copy the runnable jar, PiLogger-linuxarm64-cross.jar,  (this includes all necessary libs)  to the Pi.
-3. Plug in a USB drive mounted at `/mnt/usb_logs` and run the logger.
-4. After the match, remove the drive and open the `.wpilog` file in your viewer of choice.
+4. Copy the runnable jar, PiLogger-linuxarm64-cross.jar,  (this includes all necessary libs)  to the Pi.
+5. Plug in a USB drive mounted at `/mnt/usb_logs` and run the logger.
+6. After the match, remove the drive and open the `.wpilog` file in your viewer of choice.
 
 ### Setup Instructions for PI
 1. Flash pi with Pi4 image using Raspberry Pi Imager
 2. Picking Raspberry PI OS Lite (64 bit)
-    a. Name the pi as pi-logger
-    b. Have it connect to wifi for the next step
-    c. Create user as frc302 and password as dragons
+    1. Name the pi as pi-logger
+    2. Have it connect to wifi for the next step
+    3. Create user as frc302 and password as dragons
 3. Insert card to pi
 4. Run the following:
-    a. apt-get update
-    b. apt-get upgrade
-    c. apt-get install openjdk-21-jdk
+    1. apt-get update
+    2. apt-get upgrade
+    3. apt-get install openjdk-21-jdk
 5. Make an entry in /etc/fstab for /mnt/usb_logs
 6. Following build instructions for the rest of the setup
