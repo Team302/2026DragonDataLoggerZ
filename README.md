@@ -42,8 +42,11 @@ This program turns a small computer (like a Raspberry Pi) into a black box for o
     3. Create user as frc302 and password as dragons
 3. Insert card to pi
 4. Run the following:
-    1. apt-get update
-    2. apt-get upgrade
-    3. apt-get install openjdk-21-jdk
+
+    ```bash
+    apt-get update
+    apt-get upgrade
+    apt-get install openjdk-21-jdk
+    ```
 5. Make an entry in /etc/fstab for /mnt/usb_logs
 6. Following build instructions for the rest of the setup
