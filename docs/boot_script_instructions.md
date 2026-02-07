@@ -2,18 +2,18 @@
 copy pilogger.service from the pi-logger directory into /etc/systemd/system/pilogger.service
 
 ```bash
-systemctl daemon-reload
-systemctl enable pilogger.service
-systemctl start pilogger.service
+sudo systemctl daemon-reload
+sudo systemctl enable pilogger.service
+sudo systemctl start pilogger.service
 ```
 
 ## Systemctl reference
 
 Start the service
-`systemctl start pilogger.service`
+`sudo systemctl start pilogger.service`
 
 Verify the service is running
-`systemctl status pilogger.service`
+`sudo systemctl status pilogger.service`
 
 
 ## Troubleshooting
