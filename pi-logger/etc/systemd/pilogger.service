@@ -1,0 +1,17 @@
+[Unit]
+Description=PiLogger
+After=multi-user.target
+
+[Service]
+User=frc302
+WorkingDirectory=/home/frc302/
+# Call java directly using its absolute path
+ExecStart=/usr/bin/java -jar /home/frc302/PiLogger-linuxarm64-cross.jar
+# Add a delay to prevent rapid-fire restarts
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
