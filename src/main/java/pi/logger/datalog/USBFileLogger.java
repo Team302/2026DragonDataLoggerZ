@@ -12,7 +12,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 //====================================================================================================================================================
-package pi.logger;
+package pi.logger.datalog;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -25,6 +25,8 @@ import java.util.concurrent.BlockingQueue;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.structs.ChassisSpeeds;
+import pi.logger.udp.UdpMessage;
+import pi.logger.udp.UdpReceiver;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;

@@ -12,12 +12,13 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 //====================================================================================================================================================
-package pi.logger;
+package pi.logger.nt;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.datalog.USBFileLogger;
 import pi.logger.structs.ChassisSpeeds;
 import pi.logger.structs.SwerveModulePosition;
 import pi.logger.structs.SwerveModuleState;
