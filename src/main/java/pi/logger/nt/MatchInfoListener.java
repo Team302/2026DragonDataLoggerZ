@@ -12,10 +12,11 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 //====================================================================================================================================================
-package pi.logger;
+package pi.logger.nt;
 
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.networktables.NetworkTableEvent.Kind;
+
 import java.util.EnumSet;
 
 public final class MatchInfoListener {
