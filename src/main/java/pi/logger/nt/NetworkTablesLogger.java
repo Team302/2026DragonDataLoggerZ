@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.datalog.USBFileLogger;
 import pi.logger.structs.ChassisSpeeds;
 import pi.logger.structs.SwerveModulePosition;
 import pi.logger.structs.SwerveModuleState;
@@ -27,11 +28,6 @@ import edu.wpi.first.networktables.StructArraySubscriber;
 import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.networktables.Topic;
 import edu.wpi.first.networktables.TopicInfo;
-import edu.wpi.first.util.struct.Struct;
-import pi.logger.telemetry.TelemetryEvent;
-import pi.logger.telemetry.TelemetryPayloadType;
-import pi.logger.telemetry.TelemetryProcessor;
-import pi.logger.telemetry.TelemetrySource;
 
 public final class NetworkTablesLogger {
     
@@ -115,7 +111,8 @@ public final class NetworkTablesLogger {
             
             if (pose != null) {
                 
-                publishStruct("DriveState/Pose", pose, Pose2d.struct);
+                // Log the entire Pose2d struct using USBFileLogger
+                USBFileLogger.logStruct("DriveState/Pose", pose);
             
             }
         } catch (Exception e) {
@@ -127,7 +124,7 @@ public final class NetworkTablesLogger {
         try {
             ChassisSpeeds speeds = chassisSpeedsSubscriber.get();
             if (speeds != null) {
-                publishStruct("DriveState/ChassisSpeeds", speeds, ChassisSpeeds.struct);
+                USBFileLogger.logStruct("DriveState/ChassisSpeeds", speeds);
             }
         } catch (Exception e) {
             System.err.println("Error logging ChassisSpeeds: " + e.getMessage());
@@ -138,7 +135,7 @@ public final class NetworkTablesLogger {
         try {
             SwerveModulePosition[] positions = modulePositionsSubscriber.get();
             if (positions != null && positions.length > 0) {
-                publishStructArray("DriveState/ModulePositions", positions, SwerveModulePosition.struct);
+                USBFileLogger.logStructArray("DriveState/ModulePositions", positions, SwerveModulePosition.struct);
             }
         } catch (Exception e) {
             System.err.println("Error logging ModulePositions: " + e.getMessage());
@@ -150,7 +147,7 @@ public final class NetworkTablesLogger {
             if (driveStateTable == null) return;
             double freq = driveStateTable.getEntry("OdometryFrequency").getDouble(Double.NaN);
             if (!Double.isNaN(freq)) {
-                publishScalar(TelemetryPayloadType.DOUBLE, "DriveState/OdometryFrequency", freq);
+                USBFileLogger.logDouble("DriveState/OdometryFrequency", freq);
             }
         } catch (Exception e) {
             System.err.println("Error logging OdometryFrequency: " + e.getMessage());
@@ -161,7 +158,7 @@ public final class NetworkTablesLogger {
         try {
             SwerveModuleState[] states = moduleStatesSubscriber.get();
             if (states != null && states.length > 0) {
-                publishStructArray("DriveState/ModuleStates", states, SwerveModuleState.struct);
+                USBFileLogger.logStructArray("DriveState/ModuleStates", states, SwerveModuleState.struct);
             }
         } catch (Exception e) {
             System.err.println("Error logging ModuleStates: " + e.getMessage());
@@ -172,7 +169,7 @@ public final class NetworkTablesLogger {
         try {
             SwerveModuleState[] targets = moduleTargetsSubscriber.get();
             if (targets != null && targets.length > 0) {
-                publishStructArray("DriveState/ModuleTargets", targets, SwerveModuleState.struct);
+                USBFileLogger.logStructArray("DriveState/ModuleTargets", targets, SwerveModuleState.struct);
             }
         } catch (Exception e) {
             System.err.println("Error logging ModuleTargets: " + e.getMessage());
@@ -243,48 +240,5 @@ public final class NetworkTablesLogger {
         }
     }
 
-    private static void publishStruct(String channel, Object value, Struct<?> struct) {
-        if (value == null || struct == null) {
-            return;
-        }
-        TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
-            TelemetrySource.NETWORK_TABLES,
-            TelemetryPayloadType.STRUCT,
-            channel,
-            value,
-            struct
-        );
-        TelemetryProcessor.publish(event);
-    }
 
-    private static void publishStructArray(String channel, Object[] values, Struct<?> struct) {
-        if (values == null || values.length == 0) {
-            return;
-        }
-        TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
-            TelemetrySource.NETWORK_TABLES,
-            TelemetryPayloadType.STRUCT_ARRAY,
-            channel,
-            values,
-            struct
-        );
-        TelemetryProcessor.publish(event);
-    }
-
-    private static void publishScalar(TelemetryPayloadType type, String channel, Object value) {
-        if (value == null) {
-            return;
-        }
-        TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
-            TelemetrySource.NETWORK_TABLES,
-            type,
-            channel,
-            value,
-            null
-        );
-        TelemetryProcessor.publish(event);
-    }
 }

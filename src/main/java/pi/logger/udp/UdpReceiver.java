@@ -18,17 +18,16 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
-
-import pi.logger.telemetry.TelemetryEvent;
-import pi.logger.telemetry.TelemetryPayloadType;
-import pi.logger.telemetry.TelemetryProcessor;
-import pi.logger.telemetry.TelemetrySource;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public final class UdpReceiver {
 
     private static final int PORT = 5900; // choose your port
     private static final int MAX_PACKET_SIZE = 1500;
+
+    private static final BlockingQueue<UdpMessage> queue =
+            new LinkedBlockingQueue<>(10_000);
 
     private static volatile boolean running = true;
     private static volatile DatagramSocket socket = null;
@@ -53,6 +52,10 @@ public final class UdpReceiver {
                 // Ignore exceptions during close
             }
         }
+    }
+
+    public static BlockingQueue<UdpMessage> getQueue() {
+        return queue;
     }
 
     public static long getMessagesProcessed() {
@@ -88,19 +91,14 @@ public final class UdpReceiver {
                         packet.getLength()
                 );
 
-        String payloadString = new String(payload, StandardCharsets.UTF_8);
+                UdpMessage msg = new UdpMessage(
+                        timestamp,
+                        payload
+                );
 
-        TelemetryEvent event = new TelemetryEvent(
-            timestamp,
-            TelemetrySource.UDP,
-            TelemetryPayloadType.CSV,
-            "udp/raw",
-            payloadString,
-            null
-        );
-
-        TelemetryProcessor.publish(event);
-        messagesProcessed++;
+                if (queue.offer(msg)) { // non-blocking
+                    messagesProcessed++;
+                }
             }
         } catch (SocketException e) {
             // Expected when socket is closed by stop()
