@@ -21,12 +21,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.structs.ChassisSpeeds;
-import pi.logger.udp.UdpMessage;
-import pi.logger.udp.UdpReceiver;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
@@ -39,6 +35,7 @@ public final class USBFileLogger {
     private static final File LOG_DIR = new File("/mnt/usb_logs");
 
     private static volatile boolean running = true;
+    private static Thread rotationThread;
 
     private static DataLogWriter dataLog;
     private static File currentFile;
@@ -56,11 +53,16 @@ public final class USBFileLogger {
     public static void start() {
         Thread t = new Thread(USBFileLogger::run, "file-logger");
         t.setDaemon(true);
+        rotationThread = t;
         t.start();
     }
 
     public static void stop() {
         running = false;
+        Thread t = rotationThread;
+        if (t != null) {
+            t.interrupt();
+        }
     }
 
     /**
@@ -127,63 +129,38 @@ public final class USBFileLogger {
      * Log a Pose2d struct from an external source (e.g., NetworkTables)
      */
     public static void logStruct(String name, Pose2d value) {
-        if (dataLog == null) return;
-        synchronized (structEntries) {
-            @SuppressWarnings("unchecked")
-            StructLogEntry<Pose2d> entry = (StructLogEntry<Pose2d>) structEntries.computeIfAbsent(
-                name,
-                k -> StructLogEntry.create(dataLog, k, Pose2d.struct)
-            );
-            entry.append(value, 0);
-            dataLog.flush();
-        }
+        logStructEntry(name, value, Pose2d.struct);
     }
 
     /**
      * Log a ChassisSpeeds struct
      */
     public static void logStruct(String name, ChassisSpeeds value) {
-        if (dataLog == null) return;
-
-        synchronized (structEntries) {
-            @SuppressWarnings("unchecked")
-            StructLogEntry<ChassisSpeeds> entry = (StructLogEntry<ChassisSpeeds>) structEntries.computeIfAbsent(
-                name,
-                k -> StructLogEntry.create(dataLog, k, ChassisSpeeds.struct)
-            );
-            entry.append(value, 0);
-            dataLog.flush();
-        }
+        logStructEntry(name, value, ChassisSpeeds.struct);
     }
 
     /**
      * Log a SwerveModulePosition struct
      */
     public static void logStruct(String name, pi.logger.structs.SwerveModulePosition value) {
-        if (dataLog == null) return;
-
-        synchronized (structEntries) {
-            @SuppressWarnings("unchecked")
-            StructLogEntry<pi.logger.structs.SwerveModulePosition> entry = (StructLogEntry<pi.logger.structs.SwerveModulePosition>) structEntries.computeIfAbsent(
-                name,
-                k -> StructLogEntry.create(dataLog, k, pi.logger.structs.SwerveModulePosition.struct)
-            );
-            entry.append(value, 0);
-            dataLog.flush();
-        }
+        logStructEntry(name, value, pi.logger.structs.SwerveModulePosition.struct);
     }
 
     /**
      * Log a SwerveModuleState struct
      */
     public static void logStruct(String name, pi.logger.structs.SwerveModuleState value) {
-        if (dataLog == null) return;
+        logStructEntry(name, value, pi.logger.structs.SwerveModuleState.struct);
+    }
+
+    public static <T> void logStructEntry(String name, T value, Struct<T> struct) {
+        if (dataLog == null || value == null || struct == null) return;
 
         synchronized (structEntries) {
             @SuppressWarnings("unchecked")
-            StructLogEntry<pi.logger.structs.SwerveModuleState> entry = (StructLogEntry<pi.logger.structs.SwerveModuleState>) structEntries.computeIfAbsent(
+            StructLogEntry<T> entry = (StructLogEntry<T>) structEntries.computeIfAbsent(
                 name,
-                k -> StructLogEntry.create(dataLog, k, pi.logger.structs.SwerveModuleState.struct)
+                k -> StructLogEntry.create(dataLog, k, struct)
             );
             entry.append(value, 0);
             dataLog.flush();
@@ -218,12 +195,13 @@ public final class USBFileLogger {
             Files.createDirectories(LOG_DIR.toPath());
             openNewFile();
 
-            BlockingQueue<UdpMessage> queue = UdpReceiver.getQueue();
-
             while (running) {
-                UdpMessage msg = queue.take();
-                writeMessage(msg);
-
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
                 if (shouldRotate()) {
                     rotate();
                 }
@@ -236,9 +214,12 @@ public final class USBFileLogger {
         }
     }
 
-    private static void writeMessage(UdpMessage msg) {
+    public static void logCsvPayload(String payload) {
+        if (payload == null || dataLog == null) {
+            return;
+        }
+
         try {
-            String payload = new String(msg.payload());
             
             // Parse CSV format: timestamp,signalID,type,value,units
             String[] parts = payload.split(",", 5);
