@@ -259,11 +259,7 @@ public final class USBFileLogger {
                 case "double", "float" -> {
                     try {
                         double doubleValue = Double.parseDouble(value);
-                        int entryId = entryIds.computeIfAbsent(
-                            entryName,
-                            k -> dataLog.start(k, "double")
-                        );
-                        dataLog.appendDouble(entryId, doubleValue, 0);
+                        logDouble(entryName, doubleValue);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse double: " + value);
                     }
@@ -271,42 +267,19 @@ public final class USBFileLogger {
                 case "int", "integer", "long" -> {
                     try {
                         long intValue = Long.parseLong(value);
-                        int entryId = entryIds.computeIfAbsent(
-                            entryName,
-                            k -> dataLog.start(k, "int64")
-                        );
-                        dataLog.appendInteger(entryId, intValue, 0);
+                        logInteger(entryName, intValue);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse integer: " + value);
                     }
                 }
-                case "bool", "boolean" -> {
-                    boolean boolValue = Boolean.parseBoolean(value);
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "boolean")
-                    );
-                    dataLog.appendBoolean(entryId, boolValue, 0);
-                }
-                case "string", "str" -> {
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "string")
-                    );
-                    dataLog.appendString(entryId, value, 0);
-                }
+                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value));
+                case "string", "str" -> logString(entryName, value);
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
                     // Default to string for unknown types
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "string")
-                    );
-                    dataLog.appendString(entryId, value, 0);
+                    logString(entryName, value);
                 }
             }
-
-            recordWriteAndMaybeFlush();
 
         } catch (Exception e) {
             System.err.println("Error writing message: " + e.getMessage());

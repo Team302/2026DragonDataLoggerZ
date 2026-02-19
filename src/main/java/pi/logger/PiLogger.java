@@ -134,7 +134,6 @@ public class PiLogger {
         USBFileLogger.start();
         TelemetryProcessor.registerStage(new CsvTelemetryStage());
         TelemetryProcessor.registerStage(new DataLogStage());
-        TelemetryProcessor.start();
 
         UdpReceiver.start();
         NetworkTablesLogger.start();
