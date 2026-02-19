@@ -15,6 +15,7 @@
 package pi.logger.nt;
 
 import edu.wpi.first.networktables.*;
+import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.udp.UdpReceiver;
 
 import java.lang.management.ManagementFactory;
@@ -59,7 +60,7 @@ public final class HealthPublisher {
                 heartbeatEntry.setInteger(heartbeat);
 
                 queueDepth.setInteger(
-                        UdpReceiver.getQueue().size());
+                        TelemetryProcessor.getPendingQueueSize());
 
                 messagesProcessedEntry.setInteger(
                         UdpReceiver.getMessagesProcessed());

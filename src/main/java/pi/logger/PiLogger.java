@@ -23,6 +23,9 @@ import pi.logger.nt.HealthPublisher;
 import pi.logger.nt.MatchInfoListener;
 import pi.logger.nt.NetworkTablesLogger;
 import pi.logger.nt.NtClient;
+import pi.logger.telemetry.CsvTelemetryStage;
+import pi.logger.telemetry.DataLogStage;
+import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.udp.UdpReceiver;
 
 import java.io.File;
@@ -128,8 +131,12 @@ public class PiLogger {
         MatchInfoListener.start();
         HealthPublisher.start();
 
-        UdpReceiver.start();
         USBFileLogger.start();
+        TelemetryProcessor.registerStage(new CsvTelemetryStage());
+        TelemetryProcessor.registerStage(new DataLogStage());
+        TelemetryProcessor.start();
+
+        UdpReceiver.start();
         NetworkTablesLogger.start();
 
         System.out.println("Pi logger running");

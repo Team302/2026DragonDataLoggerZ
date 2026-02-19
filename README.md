@@ -16,10 +16,11 @@ No cap, this logger is a W for your drive team. Let's go! 🚀
 ### How it works 🤔
 
 1. **NT client startup:** `NtClient` connects to the team or custom server (default team 302, or you can pass an IP/hostname). This keeps the Pi in sync with the robot’s NetworkTables. (π) 🤝
-2. **NetworkTables logging:** `NetworkTablesLogger` subscribes to the DriveState table, converts the structs, and streams them to the USB logger. 💾
-3. **UDP receiver:** `UdpReceiver` listens on port 5900 for CSV packets (`timestamp,signalID,type,value,units`) and drops them into a queue. 📥
-4. **USB file writer:** `USBFileLogger` pulls from the queue, rotates files every five minutes, and writes everything into `/mnt/usb_logs/*.wpilog` so tools can replay it. 🔄
-5. **Health + match publishing:** `HealthPublisher` reports health data back to NetworkTables, while `MatchInfoListener` keeps track of match status. 🩺
+2. **NetworkTables logging:** `NetworkTablesLogger` subscribes to the DriveState table, converts the structs, and emits `TelemetryEvent`s instead of writing directly to disk. 💾
+3. **UDP receiver:** `UdpReceiver` listens on port 5900 for CSV packets (`timestamp,signalID,type,value,units`) and emits matching telemetry events as soon as packets arrive. 📥
+4. **Telemetry processor:** `TelemetryProcessor` is the new middle layer. It ingests events from both sources, runs any registered `TelemetryStage`s (mix, filter, enrich, metrics), and decides what ultimately gets persisted. Want custom math or feature flags? Drop in another stage. 🧠
+5. **USB file writer:** `USBFileLogger` now focuses purely on file lifecycle (rotation, flushing). The default stages call its APIs directly to write `/mnt/usb_logs/*.wpilog`, so adding new sinks or copying data elsewhere is straightforward. 🔄
+6. **Health + match publishing:** `HealthPublisher` reports health data back to NetworkTables, while `MatchInfoListener` keeps track of match status. 🩺
 
 ### Why it matters💡
 
