@@ -23,6 +23,7 @@ import pi.logger.nt.HealthPublisher;
 import pi.logger.nt.MatchInfoListener;
 import pi.logger.nt.NetworkTablesLogger;
 import pi.logger.nt.NtClient;
+import pi.logger.telemetry.BatteryTelemetryStage;
 import pi.logger.telemetry.CsvTelemetryStage;
 import pi.logger.telemetry.DataLogStage;
 import pi.logger.telemetry.TelemetryProcessor;
@@ -128,6 +129,7 @@ public class PiLogger {
         USBFileLogger.start();
         TelemetryProcessor.registerStage(new CsvTelemetryStage());
         TelemetryProcessor.registerStage(new DataLogStage());
+        TelemetryProcessor.registerStage(new BatteryTelemetryStage());
 
         UdpReceiver.start();
         NetworkTablesLogger.start();
