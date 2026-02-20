@@ -55,7 +55,7 @@ public final class BatteryTelemetryStage implements TelemetryStage {
     private double latestCurrent = Double.NaN;
     private double lastVoltageForChangeDetect = Double.NaN;
     private double totalWattHours = 0.0;
-    private long lastComputeTimeMs = System.currentTimeMillis();
+    private long lastComputeTimeMs = -1L;
 
     @Override
     public void apply(TelemetryContext context) throws Exception {
@@ -80,6 +80,10 @@ public final class BatteryTelemetryStage implements TelemetryStage {
      * @param nowMs current wall-clock time in milliseconds
      */
     void maybeComputeAndLog(long nowMs) {
+        if (lastComputeTimeMs < 0) {
+            lastComputeTimeMs = nowMs;
+            return;
+        }
         long elapsedMs = nowMs - lastComputeTimeMs;
         if (elapsedMs < 1000) {
             return;
