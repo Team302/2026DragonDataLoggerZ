@@ -37,6 +37,10 @@ No cap, this logger is a W for your drive team. Let's go! 🚀
 5. Plug in a USB drive mounted at `/mnt/usb_logs` and run the logger.
 6. After the match, remove the drive and open the `.wpilog` file in your viewer of choice.
 
+### Continuous Integration 🤖
+
+Every push and pull request to `main` automatically runs a Gradle build via GitHub Actions (see `.github/workflows/gradle-build.yml`). The workflow uses Temurin JDK 21, validates the Gradle wrapper, assembles both the standard and shadow jars, and uploads the contents of `build/libs` and `build/distributions` as artifacts so you can download the packaged binaries straight from the run summary.
+
 ### Setup Instructions for π 🤖
 1. Flash the Pi with the Pi4 image using Raspberry Pi Imager (EZ mode)
 2. Pick Raspberry Pi OS Lite (64 bit) (no bloat, just vibes)

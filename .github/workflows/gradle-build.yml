@@ -33,12 +33,3 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew clean build shadowJar --stacktrace
-
-      - name: Upload build artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pi-logger-build
-          path: |
-            build/libs/**
-            build/distributions/**
