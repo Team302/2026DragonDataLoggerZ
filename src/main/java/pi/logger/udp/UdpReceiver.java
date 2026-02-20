@@ -88,19 +88,19 @@ public final class UdpReceiver {
                         packet.getLength()
                 );
 
-        String payloadString = new String(payload, StandardCharsets.UTF_8);
+                String payloadString = new String(payload, StandardCharsets.UTF_8);
 
-        TelemetryEvent event = new TelemetryEvent(
-            timestamp,
-            TelemetrySource.UDP,
-            TelemetryPayloadType.CSV,
-            "udp/raw",
-            payloadString,
-            null
-        );
+                TelemetryEvent event = new TelemetryEvent(
+                    timestamp,
+                    TelemetrySource.UDP,
+                    TelemetryPayloadType.CSV,
+                    "udp/raw",
+                    payloadString,
+                    null
+                );
 
-        TelemetryProcessor.publish(event);
-        messagesProcessed++;
+                TelemetryProcessor.publish(event);
+                messagesProcessed++;
             }
         } catch (SocketException e) {
             // Expected when socket is closed by stop()

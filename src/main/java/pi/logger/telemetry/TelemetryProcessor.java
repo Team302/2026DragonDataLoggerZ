@@ -1,3 +1,17 @@
+//====================================================================================================================================================
+// Copyright 2026 Lake Orion Robotics FIRST Team 302
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+// OR OTHER DEALINGS IN THE SOFTWARE.
+//====================================================================================================================================================
 package pi.logger.telemetry;
 
 import java.util.List;
@@ -16,7 +30,7 @@ public final class TelemetryProcessor {
     private static final List<TelemetryStage> stages = new CopyOnWriteArrayList<>();
 
     private static final AtomicBoolean running = new AtomicBoolean(false);
-    private static final AtomicLong processedCount = new AtomicLong();
+    private static final AtomicLong receivedCount = new AtomicLong();
     private static final AtomicLong droppedCount = new AtomicLong();
     private static final AtomicLong errorCount = new AtomicLong();
 
@@ -28,8 +42,8 @@ public final class TelemetryProcessor {
         stages.add(stage);
     }
 
-    public static long getProcessedCount() {
-        return processedCount.get();
+    public static long getReceivedCount() {
+        return receivedCount.get();
     }
 
     public static long getDroppedCount() {
@@ -46,7 +60,11 @@ public final class TelemetryProcessor {
 
     public static void publish(TelemetryEvent event) {
         if (!inputQueue.offer(event)) {
-            droppedCount.incrementAndGet();
+            long drops = droppedCount.incrementAndGet();
+            if (drops == 1 || drops % 1000 == 0) {
+                System.err.println(
+                        "[TelemetryProcessor] Dropped " + drops + " events; queue at capacity (" + inputQueue.size() + ")");
+            }
         }
     }
 
@@ -86,7 +104,7 @@ public final class TelemetryProcessor {
                         e.printStackTrace();
                     }
                 }
-                processedCount.incrementAndGet();
+                receivedCount.incrementAndGet();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

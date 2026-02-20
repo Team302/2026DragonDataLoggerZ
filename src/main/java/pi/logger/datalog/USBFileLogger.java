@@ -31,6 +31,8 @@ import edu.wpi.first.util.struct.Struct;
 public final class USBFileLogger {
 
     private static final long MAX_FILE_AGE_MS = 5 * 60 * 1000; // 5 minutes
+    private static final int FLUSH_ENTRY_THRESHOLD = 200;
+    private static final long FLUSH_TIME_THRESHOLD_MS = 500;
 
     private static final File LOG_DIR = new File("/mnt/usb_logs");
 
@@ -40,6 +42,9 @@ public final class USBFileLogger {
     private static DataLogWriter dataLog;
     private static File currentFile;
     private static long fileStartTime;
+    private static final Object flushLock = new Object();
+    private static long writesSinceFlush = 0;
+    private static long lastFlushTimeMs = System.currentTimeMillis();
 
     // Cache of entry IDs by entry name
     private static final Map<String, Integer> entryIds = new HashMap<>();
@@ -77,6 +82,7 @@ public final class USBFileLogger {
                 k -> dataLog.start(k, "double")
             );
             dataLog.appendDouble(entryId, value, 0);
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -92,6 +98,7 @@ public final class USBFileLogger {
                 k -> dataLog.start(k, "int64")
             );
             dataLog.appendInteger(entryId, value, 0);
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -107,6 +114,7 @@ public final class USBFileLogger {
                 k -> dataLog.start(k, "boolean")
             );
             dataLog.appendBoolean(entryId, value, 0);
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -122,6 +130,7 @@ public final class USBFileLogger {
                 k -> dataLog.start(k, "string")
             );
             dataLog.appendString(entryId, value, 0);
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -163,7 +172,7 @@ public final class USBFileLogger {
                 k -> StructLogEntry.create(dataLog, k, struct)
             );
             entry.append(value, 0);
-            dataLog.flush();
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -177,7 +186,7 @@ public final class USBFileLogger {
                 k -> StructArrayLogEntry.create(dataLog, k, elementStruct)
             );
             entry.append(values, 0);
-            dataLog.flush();
+            recordWriteAndMaybeFlush();
         }
     }
 
@@ -185,8 +194,17 @@ public final class USBFileLogger {
      * Flush the log to disk
      */
     public static void flush() {
-        if (dataLog != null) {
-            dataLog.flush();
+        DataLogWriter log = dataLog;
+        if (log != null) {
+            synchronized (flushLock) {
+                try {
+                    log.flush();
+                } catch (Exception e) {
+                    System.err.println("USBFileLogger flush failed: " + e.getMessage());
+                }
+                writesSinceFlush = 0;
+                lastFlushTimeMs = System.currentTimeMillis();
+            }
         }
     }
 
@@ -241,11 +259,7 @@ public final class USBFileLogger {
                 case "double", "float" -> {
                     try {
                         double doubleValue = Double.parseDouble(value);
-                        int entryId = entryIds.computeIfAbsent(
-                            entryName,
-                            k -> dataLog.start(k, "double")
-                        );
-                        dataLog.appendDouble(entryId, doubleValue, 0);
+                        logDouble(entryName, doubleValue);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse double: " + value);
                     }
@@ -253,43 +267,19 @@ public final class USBFileLogger {
                 case "int", "integer", "long" -> {
                     try {
                         long intValue = Long.parseLong(value);
-                        int entryId = entryIds.computeIfAbsent(
-                            entryName,
-                            k -> dataLog.start(k, "int64")
-                        );
-                        dataLog.appendInteger(entryId, intValue, 0);
+                        logInteger(entryName, intValue);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse integer: " + value);
                     }
                 }
-                case "bool", "boolean" -> {
-                    boolean boolValue = Boolean.parseBoolean(value);
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "boolean")
-                    );
-                    dataLog.appendBoolean(entryId, boolValue, 0);
-                }
-                case "string", "str" -> {
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "string")
-                    );
-                    dataLog.appendString(entryId, value, 0);
-                }
+                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value));
+                case "string", "str" -> logString(entryName, value);
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
                     // Default to string for unknown types
-                    int entryId = entryIds.computeIfAbsent(
-                        entryName,
-                        k -> dataLog.start(k, "string")
-                    );
-                    dataLog.appendString(entryId, value, 0);
+                    logString(entryName, value);
                 }
             }
-
-            // Flush periodically
-            dataLog.flush();
 
         } catch (Exception e) {
             System.err.println("Error writing message: " + e.getMessage());
@@ -314,6 +304,7 @@ public final class USBFileLogger {
             currentFile = new File(LOG_DIR, name);
 
             dataLog = new DataLogWriter(currentFile.getAbsolutePath());
+            resetFlushState();
 
             // Write a start-time entry at timestamp 0. Populate it with the
             // current epoch microseconds so viewers that compute relative time
@@ -322,7 +313,7 @@ public final class USBFileLogger {
                 long startEpochMicros = System.currentTimeMillis() * 1000L;
                 int startEntryId = dataLog.start(".startTime", "int64");
                 dataLog.appendInteger(startEntryId, startEpochMicros, 0L);
-                dataLog.flush();
+                flush();
             } catch (Exception ignored) {}
 
             fileStartTime = System.currentTimeMillis();
@@ -343,10 +334,39 @@ public final class USBFileLogger {
     private static void closeQuietly() {
         try {
             if (dataLog != null) {
-                dataLog.flush();
+                flush();
                 dataLog.close();
             }
         } catch (Exception ignored) {}
+    }
+
+    private static void recordWriteAndMaybeFlush() {
+        DataLogWriter log = dataLog;
+        if (log == null) {
+            return;
+        }
+
+        synchronized (flushLock) {
+            writesSinceFlush++;
+            long now = System.currentTimeMillis();
+            if (writesSinceFlush >= FLUSH_ENTRY_THRESHOLD ||
+                    (now - lastFlushTimeMs) >= FLUSH_TIME_THRESHOLD_MS) {
+                try {
+                    log.flush();
+                } catch (Exception e) {
+                    System.err.println("USBFileLogger flush failed: " + e.getMessage());
+                }
+                writesSinceFlush = 0;
+                lastFlushTimeMs = now;
+            }
+        }
+    }
+
+    private static void resetFlushState() {
+        synchronized (flushLock) {
+            writesSinceFlush = 0;
+            lastFlushTimeMs = System.currentTimeMillis();
+        }
     }
 
     private static String timestamp() {
