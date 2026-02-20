@@ -16,6 +16,7 @@ package pi.logger.datalog;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 
 /**
  * Utility for converting double arrays into FRC {@link Pose2d} objects.
@@ -60,6 +61,6 @@ public final class Pose2dUtil {
         Rotation2d rotation = rotInDegrees
             ? Rotation2d.fromDegrees(array[2])
             : Rotation2d.fromRadians(array[2]);
-        return new Pose2d(x, y, rotation);
+        return new Pose2d(new Translation2d(x, y), rotation);
     }
 }
