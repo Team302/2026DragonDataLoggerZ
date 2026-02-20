@@ -61,7 +61,7 @@ public final class USBFileLogger {
     private USBFileLogger() {}
 
     public static void start() {
-    System.out.println("USBFileLogger config: maxFileAgeMs=" + maxFileAgeMs
+        System.out.println("USBFileLogger config: maxFileAgeMs=" + maxFileAgeMs
         + ", flushEntryThreshold=" + flushEntryThreshold
         + ", flushTimeThresholdMs=" + flushTimeThresholdMs);
         Thread t = new Thread(USBFileLogger::run, "file-logger");
