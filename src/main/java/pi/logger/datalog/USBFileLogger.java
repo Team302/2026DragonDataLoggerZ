@@ -27,14 +27,20 @@ import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
 import edu.wpi.first.util.struct.Struct;
+import pi.logger.config.LoggerConfig;
 
 public final class USBFileLogger {
 
-    private static final long MAX_FILE_AGE_MS = 5 * 60 * 1000; // 5 minutes
-    private static final int FLUSH_ENTRY_THRESHOLD = 200;
-    private static final long FLUSH_TIME_THRESHOLD_MS = 500;
+    private static final long DEFAULT_MAX_FILE_AGE_MS = 5 * 60 * 1000; // 5 minutes
+    private static final int DEFAULT_FLUSH_ENTRY_THRESHOLD = 200;
+    private static final long DEFAULT_FLUSH_TIME_THRESHOLD_MS = 500;
+    private static final String DEFAULT_LOG_DIR = "/mnt/usb_logs";
 
-    private static final File LOG_DIR = new File("/mnt/usb_logs");
+    private static final long maxFileAgeMs = LoggerConfig.getLong("logger.maxFileAgeMs", DEFAULT_MAX_FILE_AGE_MS, 1);
+    private static final int flushEntryThreshold = LoggerConfig.getInt("logger.flushEntryThreshold", DEFAULT_FLUSH_ENTRY_THRESHOLD, 1, Integer.MAX_VALUE);
+    private static final long flushTimeThresholdMs = LoggerConfig.getLong("logger.flushTimeThresholdMs", DEFAULT_FLUSH_TIME_THRESHOLD_MS, 1);
+
+    private static final File LOG_DIR = new File(LoggerConfig.getString("logger.logDir", DEFAULT_LOG_DIR));
 
     private static volatile boolean running = true;
     private static Thread rotationThread;
@@ -52,10 +58,12 @@ public final class USBFileLogger {
     // Cache of struct log entries (support multiple struct types)
     private static final Map<String, StructLogEntry<?>> structEntries = new HashMap<>();
     private static final Map<String, StructArrayLogEntry<?>> structArrayEntries = new HashMap<>();
-
     private USBFileLogger() {}
 
     public static void start() {
+    System.out.println("USBFileLogger config: maxFileAgeMs=" + maxFileAgeMs
+        + ", flushEntryThreshold=" + flushEntryThreshold
+        + ", flushTimeThresholdMs=" + flushTimeThresholdMs);
         Thread t = new Thread(USBFileLogger::run, "file-logger");
         t.setDaemon(true);
         rotationThread = t;
@@ -289,7 +297,7 @@ public final class USBFileLogger {
 
     private static boolean shouldRotate() {
         long age = System.currentTimeMillis() - fileStartTime;
-        return age >= MAX_FILE_AGE_MS;
+        return age >= maxFileAgeMs;
     }
 
     private static void rotate() {
@@ -349,8 +357,8 @@ public final class USBFileLogger {
         synchronized (flushLock) {
             writesSinceFlush++;
             long now = System.currentTimeMillis();
-            if (writesSinceFlush >= FLUSH_ENTRY_THRESHOLD ||
-                    (now - lastFlushTimeMs) >= FLUSH_TIME_THRESHOLD_MS) {
+            if (writesSinceFlush >= flushEntryThreshold ||
+                    (now - lastFlushTimeMs) >= flushTimeThresholdMs) {
                 try {
                     log.flush();
                 } catch (Exception e) {
@@ -374,5 +382,6 @@ public final class USBFileLogger {
                 .withZone(ZoneId.systemDefault())
                 .format(Instant.now());
     }
+
 }
 
