@@ -21,11 +21,20 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import pi.logger.config.LoggerConfig;
 
 public final class TelemetryProcessor {
 
+    private static final int DEFAULT_QUEUE_CAPACITY = 20_000;
+    private static final int QUEUE_CAPACITY = LoggerConfig.getInt(
+        "telemetry.queueCapacity",
+        DEFAULT_QUEUE_CAPACITY,
+        1,
+        Integer.MAX_VALUE
+    );
+
     private static final BlockingQueue<TelemetryEvent> inputQueue =
-            new LinkedBlockingQueue<>(20_000);
+        new LinkedBlockingQueue<>(QUEUE_CAPACITY);
 
     private static final List<TelemetryStage> stages = new CopyOnWriteArrayList<>();
 

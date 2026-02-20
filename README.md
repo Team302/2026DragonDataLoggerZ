@@ -15,7 +15,7 @@ No cap, this logger is a W for your drive team. Let's go! 🚀
 
 ### How it works 🤔
 
-1. **NT client startup:** `NtClient` connects to the team or custom server (default team 302, or you can pass an IP/hostname). This keeps the Pi in sync with the robot’s NetworkTables. (π) 🤝
+1. **NT client startup:** `NtClient` connects to the team or custom server (default team 302, or you can config an IP/hostname). This keeps the Pi in sync with the robot’s NetworkTables. (π) 🤝
 2. **NetworkTables logging:** `NetworkTablesLogger` subscribes to the DriveState table, converts the structs, and emits `TelemetryEvent`s instead of writing directly to disk. 💾
 3. **UDP receiver:** `UdpReceiver` listens on port 5900 for CSV packets (`timestamp,signalID,type,value,units`) and emits matching telemetry events as soon as packets arrive. 📥
 4. **Telemetry processor:** `TelemetryProcessor` is the new middle layer. It ingests events from both sources, runs any registered `TelemetryStage`s (mix, filter, enrich, metrics), and decides what ultimately gets persisted. Want custom math or feature flags? Drop in another stage. 🧠
