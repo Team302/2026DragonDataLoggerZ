@@ -15,6 +15,7 @@
 package pi.logger.nt;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
+import pi.logger.config.LoggerConfig;
 
 public final class NtClient {
 
@@ -22,13 +23,15 @@ public final class NtClient {
             NetworkTableInstance.getDefault();
     private static final int DEFAULT_TEAM_NUMBER = 302;
     private static final String FALLBACK_SERVER = "localhost";
+    private static final String DEFAULT_CLIENT_IDENTITY = "pi-logger";
 
     private NtClient() {}
 
-    public static void start(String serverOverride) {
-        inst.startClient4("pi-logger");
+    public static void start() {
+        String clientIdentity = LoggerConfig.getString("nt.clientIdentity", DEFAULT_CLIENT_IDENTITY);
+        inst.startClient4(clientIdentity);
 
-        String resolvedServer = resolveServer(serverOverride);
+        String resolvedServer = resolveServer();
         if (resolvedServer != null) {
             inst.setServer(resolvedServer);
             System.out.println("NT client started, server=" + resolvedServer);
@@ -50,43 +53,13 @@ public final class NtClient {
         return inst;
     }
 
-    private static String resolveServer(String override) {
-        if (override != null && !override.isBlank()) {
-            return override.trim();
-        }
-        String envServer = System.getenv("NT_SERVER");
-        if (envServer != null && !envServer.isBlank()) {
-            return envServer.trim();
-        }
-        String propServer = System.getProperty("nt.server");
-        if (propServer != null && !propServer.isBlank()) {
-            return propServer.trim();
-        }
-        return null;
+    private static String resolveServer() {
+        String override = LoggerConfig.getString("nt.serverOverride", "");
+        return override.isBlank() ? null : override;
     }
 
     private static int resolveTeamNumber() {
-        Integer team = parseTeamNumber(System.getenv("NT_TEAM"));
-        if (team == null) {
-            team = parseTeamNumber(System.getProperty("nt.team"));
-        }
-        if (team != null) {
-            return team;
-        }
-        return DEFAULT_TEAM_NUMBER;
-    }
-
-    private static Integer parseTeamNumber(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            int parsed = Integer.parseInt(value.trim());
-            return parsed > 0 ? parsed : null;
-        } catch (NumberFormatException ex) {
-            System.err.println("Invalid team number provided: " + value);
-            return null;
-        }
+        return LoggerConfig.getInt("nt.team", DEFAULT_TEAM_NUMBER, 1, Integer.MAX_VALUE);
     }
 }
 

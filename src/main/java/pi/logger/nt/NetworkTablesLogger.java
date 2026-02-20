@@ -28,6 +28,7 @@ import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.networktables.Topic;
 import edu.wpi.first.networktables.TopicInfo;
 import edu.wpi.first.util.struct.Struct;
+import pi.logger.config.LoggerConfig;
 import pi.logger.telemetry.TelemetryEvent;
 import pi.logger.telemetry.TelemetryPayloadType;
 import pi.logger.telemetry.TelemetryProcessor;
@@ -37,7 +38,17 @@ public final class NetworkTablesLogger {
     
     private static volatile boolean running = true;
     private static final int SWERVE_MODULE_COUNT = 4;
-    private static final long TOPIC_DUMP_INTERVAL_MS = 5000; // 5 seconds
+    private static final long DEFAULT_TOPIC_DUMP_INTERVAL_MS = 60000; 
+    private static final boolean DEFAULT_TOPIC_DUMP_ENABLED = false;
+    private static final long topicDumpIntervalMs = LoggerConfig.getLong(
+        "nt.topicDumpIntervalMs",
+        DEFAULT_TOPIC_DUMP_INTERVAL_MS,
+        1000
+    );
+    private static final boolean topicDumpEnabled = LoggerConfig.getBoolean(
+        "nt.topicDumpEnabled",
+        DEFAULT_TOPIC_DUMP_ENABLED
+    );
     private static long lastTopicDumpMs = 0;
     
     // Subscribers
@@ -236,8 +247,11 @@ public final class NetworkTablesLogger {
     }
 
     private static void dumpTopicsPeriodically(NetworkTableInstance inst) {
+        if (!topicDumpEnabled) {
+            return;
+        }
         long now = System.currentTimeMillis();
-        if (now - lastTopicDumpMs >= TOPIC_DUMP_INTERVAL_MS) {
+        if (now - lastTopicDumpMs >= topicDumpIntervalMs) {
             dumpAllNetworkTableKeys(inst);
             lastTopicDumpMs = now;
         }

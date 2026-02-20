@@ -34,10 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 
-//import edu.wpi.first.util.datalog.DoubleLogEntry;
-//import edu.wpi.first.util.datalog.DataLog;
-//import edu.wpi.first.util.datalog.WPILOGWriter;
-
 public class PiLogger {
     
     private static void extractAndLoadLibrary(String libName) throws IOException {
@@ -124,9 +120,7 @@ public class PiLogger {
     }
 
     public void run(String[] args) {
-
-        String serverOverride = (args != null && args.length > 0) ? args[0] : null;
-        NtClient.start(serverOverride);
+        NtClient.start();
 
         MatchInfoListener.start();
         HealthPublisher.start();

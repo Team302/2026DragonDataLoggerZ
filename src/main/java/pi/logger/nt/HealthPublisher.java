@@ -15,6 +15,7 @@
 package pi.logger.nt;
 
 import edu.wpi.first.networktables.*;
+import pi.logger.config.LoggerConfig;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.udp.UdpReceiver;
 
@@ -27,13 +28,15 @@ import java.util.concurrent.TimeUnit;
 
 public final class HealthPublisher {
 
+        private static final String DEFAULT_LOG_DIR = "/mnt/usb_logs";
+
     private HealthPublisher() {}
 
     private static long heartbeat = 0;
 
     public static void start() {
         NetworkTable table =
-                NtClient.get().getTable("pi");
+                NtClient.get().getTable("pi-logger");
 
         NetworkTableEntry connected =
                 table.getEntry("connected");
@@ -65,7 +68,8 @@ public final class HealthPublisher {
                 messagesProcessedEntry.setInteger(
                         UdpReceiver.getMessagesProcessed());
 
-                diskFree.setDouble(getDiskFreeMB("/mnt/usb_logs"));
+                String logDir = LoggerConfig.getString("logger.logDir", DEFAULT_LOG_DIR);
+                diskFree.setDouble(getDiskFreeMB(logDir));
 
                 cpuLoad.setDouble(getCpuLoad());
 

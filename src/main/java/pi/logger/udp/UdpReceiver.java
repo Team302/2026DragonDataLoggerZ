@@ -24,11 +24,19 @@ import pi.logger.telemetry.TelemetryEvent;
 import pi.logger.telemetry.TelemetryPayloadType;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.telemetry.TelemetrySource;
+import pi.logger.config.LoggerConfig;
 
 public final class UdpReceiver {
 
-    private static final int PORT = 5900; // choose your port
-    private static final int MAX_PACKET_SIZE = 1500;
+    private static final int DEFAULT_PORT = 5900;
+    private static final int PORT = LoggerConfig.getInt("udp.listenPort", DEFAULT_PORT, 1, 65535);
+    private static final int DEFAULT_MAX_PACKET_SIZE = 1500;
+    private static final int MAX_PACKET_SIZE = LoggerConfig.getInt(
+        "udp.maxPacketSize",
+        DEFAULT_MAX_PACKET_SIZE,
+        256,
+        65507
+    );
 
     private static volatile boolean running = true;
     private static volatile DatagramSocket socket = null;
@@ -122,5 +130,6 @@ public final class UdpReceiver {
             socket = null;
         }
     }
+
 }
 
