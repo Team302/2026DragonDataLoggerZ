@@ -68,3 +68,17 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
 5. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
 5. Insert usb stick into PI usb slot
 6. Follow the [build instructions](docs/boot_script_instructions.md) above for the rest of the setup. You’re built different now. ✨
+
+
+### Enable / Disable the Wifi on the PI
+To disable the wifi, run the following command on the pi:
+
+```bash
+sudo nano /boot/firmware/config.txt
+```
+
+Then add the following line to the end of the file:
+
+```dtoverlay=disable-wifi
+```
+To re-enable the wifi, simply remove that line from the config.txt file.    
