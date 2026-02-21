@@ -10,6 +10,16 @@ application {
     mainClass = 'pi.logger.PiLogger'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+
 repositories {
     mavenCentral()
     maven { url = 'https://frcmaven.wpi.edu/artifactory/release/' }
