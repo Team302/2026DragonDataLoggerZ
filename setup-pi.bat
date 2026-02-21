@@ -32,7 +32,15 @@ echo Setting up %HOST%...
 
 REM Copy service file
 scp -i %KEY% ./deploy/pi-logger/etc/systemd/system/pilogger.service %LOGIN%:/tmp/pilogger.service
+if not %ERRORLEVEL%==0 (
+    echo Failed to copy pilogger.service to %HOST%. Aborting.
+    exit /b 3
+)
 scp -i %KEY% ./deploy/pi-logger/home/frc302/setup-pi.sh %LOGIN%:/home/frc302/setup-pi.sh
+if not %ERRORLEVEL%==0 (
+    echo Failed to copy setup-pi.sh to %HOST%. Aborting.
+    exit /b 4
+)
 
 REM Run setup script remotely
 ssh -i %KEY% %LOGIN% "chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh"
