@@ -14,6 +14,8 @@
 //====================================================================================================================================================
 package pi.logger.telemetry;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.datalog.Pose2dUtil;
 import pi.logger.datalog.USBFileLogger;
 
 public final class CsvTelemetryStage implements TelemetryStage {
@@ -26,6 +28,49 @@ public final class CsvTelemetryStage implements TelemetryStage {
         if (payload == null) {
             return;
         }
-        USBFileLogger.logCsvPayload(payload);
+        // Parse CSV format: timestamp,signalID,type,value,units
+        String[] parts = payload.split(",", 5);
+        if (parts.length < 4) {
+            System.err.println("Invalid message format: " + payload);
+            return;
+        }
+
+        String signalId = parts[1].trim();
+        String type = parts[2].trim();
+        String value = parts[3].trim();
+        String units = parts.length > 4 ? parts[4].trim() : "";
+
+        if (!"pose2d".equalsIgnoreCase(type)) {
+            USBFileLogger.logCsvPayload(payload);
+            return;
+        }
+
+        String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
+        boolean rotInDegrees = units.toLowerCase().contains("deg");
+
+        try {
+            String[] coords = value.split(";", 3);
+            if (coords.length < 3) {
+                System.err.println("Invalid Pose2d value format (expected 'x;y;rot'): " + value);
+                return;
+            }
+            double x = Double.parseDouble(coords[0].trim());
+            double y = Double.parseDouble(coords[1].trim());
+            double rot = Double.parseDouble(coords[2].trim());
+            Pose2d pose = Pose2dUtil.fromArray(new double[]{x, y, rot}, rotInDegrees);
+
+            TelemetryEvent original = context.getEvent();
+            TelemetryEvent poseEvent = new TelemetryEvent(
+                    original.timestampNs(),
+                    original.source(),
+                    TelemetryPayloadType.STRUCT,
+                    entryName,
+                    pose,
+                    Pose2d.struct
+            );
+            TelemetryProcessor.publish(poseEvent);
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse Pose2d: " + value);
+        }
     }
 }

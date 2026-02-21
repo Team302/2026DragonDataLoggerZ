@@ -150,29 +150,6 @@ public final class USBFileLogger {
     }
 
     /**
-     * Convert a double array {@code [x, y, rotationRadians]} to a {@link Pose2d} and log it as a struct.
-     *
-     * @param name  the log entry name
-     * @param array double array containing {@code [x, y, rotationRadians]}
-     * @throws IllegalArgumentException if the array is {@code null} or has fewer than 3 elements
-     */
-    public static void logPose2d(String name, double[] array) {
-        logStruct(name, Pose2dUtil.fromArray(array));
-    }
-
-    /**
-     * Convert a double array {@code [x, y, rotation]} to a {@link Pose2d} and log it as a struct.
-     *
-     * @param name         the log entry name
-     * @param array        double array containing {@code [x, y, rotation]}
-     * @param rotInDegrees {@code true} if the rotation value is in degrees; {@code false} for radians
-     * @throws IllegalArgumentException if the array is {@code null} or has fewer than 3 elements
-     */
-    public static void logPose2d(String name, double[] array, boolean rotInDegrees) {
-        logStruct(name, Pose2dUtil.fromArray(array, rotInDegrees));
-    }
-
-    /**
      * Log a ChassisSpeeds struct
      */
     public static void logStruct(String name, ChassisSpeeds value) {
@@ -305,24 +282,6 @@ public final class USBFileLogger {
                 }
                 case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value));
                 case "string", "str" -> logString(entryName, value);
-                case "pose2d" -> {
-                    // Expected value format: "x;y;rot"
-                    // Rotation is in degrees when units contains "deg", otherwise radians.
-                    try {
-                        String[] coords = value.split(";", 3);
-                        if (coords.length < 3) {
-                            System.err.println("Invalid Pose2d value format (expected 'x;y;rot'): " + value);
-                            return;
-                        }
-                        double x = Double.parseDouble(coords[0].trim());
-                        double y = Double.parseDouble(coords[1].trim());
-                        double rot = Double.parseDouble(coords[2].trim());
-                        boolean rotInDegrees = units.toLowerCase().contains("deg");
-                        logPose2d(entryName, new double[]{x, y, rot}, rotInDegrees);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Failed to parse Pose2d: " + value);
-                    }
-                }
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
                     // Default to string for unknown types
