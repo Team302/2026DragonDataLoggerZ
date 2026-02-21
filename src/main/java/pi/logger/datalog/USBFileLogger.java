@@ -143,6 +143,68 @@ public final class USBFileLogger {
     }
 
     /**
+     * Log a boolean array from an external source
+     */
+    public static void logBooleanArray(String name, boolean[] values) {
+        if (dataLog == null) return;
+
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "boolean[]")
+            );
+            dataLog.appendBooleanArray(entryId, values, 0);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
+    /**
+     * Log a double array from an external source
+     */
+    public static void logDoubleArray(String name, double[] values) {
+        if (dataLog == null) return;
+
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "double[]")
+            );
+            dataLog.appendDoubleArray(entryId, values, 0);
+            recordWriteAndMaybeFlush();
+        }
+    }
+        /**
+        * Log an integer array from an external source
+        */
+    public static void logIntegerArray(String name, long[] values) {
+        if (dataLog == null) return;
+
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "int64[]")
+            );
+            dataLog.appendIntegerArray(entryId, values, 0);
+            recordWriteAndMaybeFlush();
+        }
+    }
+        /**
+        * Log a float array from an external source
+        */
+    public static void logFloatArray(String name, float[] values) {
+        if (dataLog == null) return;
+
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(
+                name,
+                k -> dataLog.start(k, "float[]")
+            );
+            dataLog.appendFloatArray(entryId, values, 0);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
+    /**
      * Log a Pose2d struct from an external source (e.g., NetworkTables)
      */
     public static void logStruct(String name, Pose2d value) {

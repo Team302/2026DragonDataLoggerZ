@@ -17,13 +17,12 @@ package pi.logger.telemetry;
 import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.csvparsers.Pose2dUtil;
 import pi.logger.datalog.USBFileLogger;
+import pi.logger.telemetry.TelemetryArrayHelper;
 
 public final class CsvTelemetryStage implements TelemetryStage {
     @Override
-    public void apply(TelemetryContext context) {
-        if (context.payloadType() != TelemetryPayloadType.CSV) {
-            return;
-        }
+    public void apply(TelemetryContext context) 
+    {
         String payload = context.payloadAsString();
         if (payload == null) {
             return;
@@ -40,12 +39,23 @@ public final class CsvTelemetryStage implements TelemetryStage {
         String value = parts[3].trim();
         String units = parts.length > 4 ? parts[4].trim() : "";
 
-        if (!"double_array".equalsIgnoreCase(type)) {
-            USBFileLogger.logCsvPayload(payload);
-            return;
+        if ("bool_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value));
         }
-
-        if (signalId.toLowerCase().contains("pose2d")) {
+        else if ("int_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value));
+        }
+        else if ("double_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value));
+        }
+        else if ("float_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value));
+        }
+        else if (signalId.toLowerCase().contains("pose2d")) {
             Pose2d pose = Pose2dUtil.fromString(value);
             String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
             //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
