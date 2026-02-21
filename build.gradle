@@ -33,7 +33,6 @@ nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
 
 
 
-
 dependencies {
     //implementation wpi.java.deps.wpilib()
     //implementation wpi.java.vendor.java()
@@ -44,7 +43,7 @@ dependencies {
     implementation wpilibTools.deps.wpilibJava("ntcore")
     implementation wpilibTools.deps.wpilibJava("cscore")
     implementation wpilibTools.deps.wpilibJava("cameraserver")
-    implementation wpilibTools.deps.wpilibJava("wpiunits")
+    implementation "edu.wpi.first.wpiunits:wpiunits-java:2026.2.1"
 
     // Add JNI libraries for runtime
     runtimeOnly wpilibTools.deps.wpilib("wpimath")
@@ -52,7 +51,6 @@ dependencies {
     runtimeOnly wpilibTools.deps.wpilib("wpiutil")
     runtimeOnly wpilibTools.deps.wpilib("ntcore")
     runtimeOnly wpilibTools.deps.wpilib("cscore")
-    runtimeOnly wpilibTools.deps.wpilib("wpiunits")
 
     implementation group: "com.fasterxml.jackson.core", name: "jackson-annotations", version: wpi.versions.jacksonVersion.get()
     implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: wpi.versions.jacksonVersion.get()
