@@ -55,36 +55,4 @@ public final class Pose2dUtil {
         }
     }
 
-    /**
-     * Convert a double array to a {@link Pose2d}. Rotation is treated as radians.
-     *
-     * @param array array containing {@code [x, y, rotationRadians]}
-     * @return the corresponding {@link Pose2d}
-     * @throws IllegalArgumentException if the array is {@code null} or has fewer than 3 elements
-     */
-    public static Pose2d fromArray(double[] array) {
-        return fromArray(array, false);
-    }
-
-    /**
-     * Convert a double array to a {@link Pose2d}.
-     *
-     * @param array        array containing {@code [x, y, rotation]}
-     * @param rotInDegrees {@code true} if the rotation value is in degrees; {@code false} for radians
-     * @return the corresponding {@link Pose2d}
-     * @throws IllegalArgumentException if the array is {@code null} or has fewer than 3 elements
-     */
-    public static Pose2d fromArray(double[] array, boolean rotInDegrees) {
-        if (array == null || array.length < REQUIRED_LENGTH) {
-            throw new IllegalArgumentException(
-                "Pose2d array must have at least " + REQUIRED_LENGTH + " elements [x, y, rotation]"
-            );
-        }
-        double x = array[0];
-        double y = array[1];
-        Rotation2d rotation = rotInDegrees
-            ? Rotation2d.fromDegrees(array[2])
-            : Rotation2d.fromRadians(array[2]);
-        return new Pose2d(new Translation2d(x, y), rotation);
-    }
 }
