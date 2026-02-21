@@ -36,6 +36,10 @@ scp -i %KEY% ./deploy/pi-logger/home/frc302/setup-pi.sh %LOGIN%:/home/frc302/set
 
 REM Run setup script remotely
 ssh -i %KEY% %LOGIN% "chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh"
+if not %ERRORLEVEL%==0 (
+    echo Remote setup script failed with error %ERRORLEVEL%.
+    exit /b 3
+)
 
 echo %HOST% setup complete.
 
