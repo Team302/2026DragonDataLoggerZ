@@ -37,7 +37,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
         String signalId = parts[1].trim();
         String type = parts[2].trim();
         String value = parts[3].trim();
-        String units = parts.length >= 5 ? parts[4].trim() : "";
+        String units = parts.length > 4 ? parts[4].trim() : "";
 
         if ("bool_array".equalsIgnoreCase(type))
         {
