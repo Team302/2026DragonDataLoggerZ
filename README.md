@@ -51,7 +51,7 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
 4. Run the following to setup initial login (add a pinch of salt for flavor):
 
     ```powershell
-    ./setup-pi-key.bat
+    ./setup-pi-key.ps1
     ```    
 5. Run the following to install software and setup usb drive mounts (chef’s kiss):
    

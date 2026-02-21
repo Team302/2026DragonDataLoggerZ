@@ -14,7 +14,7 @@ Write-Host "Setting up $hostName..."
 
 # Copy service file
 scp -i $key ./deploy/pi-logger/etc/systemd/system/pilogger.service `
-    ${login}:/etc/systemd/system/pilogger.service
+    ${login}:/tmp/pilogger.service
 scp -i $key ./deploy/pi-logger/home/frc302/setup-pi.sh `
     ${login}:/home/frc302/setup-pi.sh
 
