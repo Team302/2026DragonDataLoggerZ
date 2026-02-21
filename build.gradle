@@ -33,7 +33,6 @@ nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
 
 
 
-
 dependencies {
     //implementation wpi.java.deps.wpilib()
     //implementation wpi.java.vendor.java()
@@ -44,6 +43,7 @@ dependencies {
     implementation wpilibTools.deps.wpilibJava("ntcore")
     implementation wpilibTools.deps.wpilibJava("cscore")
     implementation wpilibTools.deps.wpilibJava("cameraserver")
+    implementation "edu.wpi.first.wpiunits:wpiunits-java:2026.2.1"
 
     // Add JNI libraries for runtime
     runtimeOnly wpilibTools.deps.wpilib("wpimath")

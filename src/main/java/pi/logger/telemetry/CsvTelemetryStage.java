@@ -14,6 +14,8 @@
 //====================================================================================================================================================
 package pi.logger.telemetry;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import pi.logger.csvparsers.Pose2dUtil;
 import pi.logger.datalog.USBFileLogger;
 
 public final class CsvTelemetryStage implements TelemetryStage {
@@ -26,6 +28,41 @@ public final class CsvTelemetryStage implements TelemetryStage {
         if (payload == null) {
             return;
         }
-        USBFileLogger.logCsvPayload(payload);
+        // Parse CSV format: timestamp,signalID,type,value,units
+        String[] parts = payload.split(",", 5);
+        if (parts.length < 4) {
+            System.err.println("Invalid message format: " + payload);
+            return;
+        }
+
+        String signalId = parts[1].trim();
+        String type = parts[2].trim();
+        String value = parts[3].trim();
+        String units = parts.length > 4 ? parts[4].trim() : "";
+
+        if (!"double_array".equalsIgnoreCase(type)) {
+            USBFileLogger.logCsvPayload(payload);
+            return;
+        }
+
+        if (signalId.toLowerCase().contains("pose2d")) {
+            Pose2d pose = Pose2dUtil.fromString(value);
+            String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
+            //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
+            TelemetryEvent original = context.getEvent();
+            TelemetryEvent poseEvent = new TelemetryEvent(
+                    original.timestampNs(),
+                    original.source(),
+                    TelemetryPayloadType.STRUCT,
+                    entryName,
+                    pose,
+                    Pose2d.struct
+            );
+            TelemetryProcessor.publish(poseEvent);
+            
+        } else {
+            USBFileLogger.logCsvPayload(payload);
+        }
+        
     }
 }
