@@ -22,9 +22,9 @@ public enum TelemetryPayloadType {
     BOOLEAN,
     STRUCT,
     STRUCT_ARRAY,
-    RAW_BYTES,
     BOOLEAN_ARRAY,
     DOUBLE_ARRAY,
     INTEGER_ARRAY,
     FLOAT_ARRAY,
+    RAW_BYTES
 }
