@@ -136,8 +136,8 @@ task scpJar(type: Exec) {
     def user = 'frc302'
     def host = 'dragondataloggerz.local'
     def login = "${user}@${host}"
-    def key = './keys/id_ed25519'
-    def jar = './build/libs/PiLogger-linuxarm64-cross.jar'
+    def key = project.file('keys/id_ed25519').absolutePath
+    def jar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
     commandLine 'scp', '-i', key, jar, "${login}:/tmp/PiLogger-linuxarm64-cross.jar"
 }
 
@@ -145,8 +145,8 @@ task scpScript(type: Exec) {
     def user = 'frc302'
     def host = 'dragondataloggerz.local'
     def login = "${user}@${host}"
-    def key = './keys/id_ed25519'
-    def script = './deploy/pi-logger/home/frc302/deploy-pi.sh'
+    def key = project.file('keys/id_ed25519').absolutePath
+    def script = project.file('deploy/pi-logger/home/frc302/deploy-pi.sh').absolutePath
     commandLine 'scp', '-i', key, script, "${login}:/home/frc302/deploy-pi.sh"
 }
 
@@ -154,7 +154,7 @@ task runDeployScript(type: Exec) {
     def user = 'frc302'
     def host = 'dragondataloggerz.local'
     def login = "${user}@${host}"
-    def key = './keys/id_ed25519'
+    def key = project.file('keys/id_ed25519').absolutePath
     commandLine 'ssh', '-i', key, login, 'chmod +x /home/frc302/deploy-pi.sh && /home/frc302/deploy-pi.sh'
 }
 
@@ -173,7 +173,7 @@ task setupPiSSHKey {
         def user = 'frc302'
         def host = 'dragondataloggerz.local'
         def login = "${user}@${host}"
-        def authFile = './deploy/pi-logger/home/frc302/.ssh/authorized_keys'
+        def authFile = project.file('deploy/pi-logger/home/frc302/.ssh/authorized_keys').absolutePath
 
         exec {
             commandLine 'ssh', login, 'mkdir -p ~/.ssh && chmod 700 ~/.ssh'
@@ -194,10 +194,10 @@ task setupPi {
         def user = 'frc302'
         def host = 'dragondataloggerz.local'
         def login = "${user}@${host}"
-        def key = './keys/id_ed25519'
+        def key = project.file('keys/id_ed25519').absolutePath
         def markerCheckFile = '__pi_marker_check.txt'
-        def piloggerService = './deploy/pi-logger/etc/systemd/system/pilogger.service'
-        def setupScript = './deploy/pi-logger/home/frc302/setup-pi.sh'
+        def piloggerService = project.file('deploy/pi-logger/etc/systemd/system/pilogger.service').absolutePath
+        def setupScript = project.file('deploy/pi-logger/home/frc302/setup-pi.sh').absolutePath
 
         // Check marker file only; skip setup if present
         def markerCheck = exec {
