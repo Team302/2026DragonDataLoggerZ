@@ -19,6 +19,6 @@ scp -i $key ./deploy/pi-logger/home/frc302/setup-pi.sh `
     ${login}:/home/frc302/setup-pi.sh
 
 # Run setup commands
-ssh -i $key $login @"chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh"@
+ssh -i $key $login "chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh"
 
 Write-Host "$hostName setup complete."
