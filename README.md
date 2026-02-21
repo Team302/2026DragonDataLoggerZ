@@ -30,9 +30,9 @@ No cap, this logger is a W for your drive team. Let's go! 🚀
 
 ### Getting Started 🛠️
 
-1. Build the project with `./gradlew build` (or `./build.bat` on Windows).
-2. Test the project on Windows using run.bat (this will start udp listening locally)
-3. If deploying to the pi, run build-pi.bat. This will create a jar in the build/libs folder called PiLogger-linuxarm64-cross.jar
+1. Build the project with `./gradlew build` (or `./build.ps1` on Windows).
+2. Test the project on Windows using run.ps1 (this will start udp listening locally)
+3. If deploying to the pi, run build-pi.ps1. This will create a jar in the build/libs folder called PiLogger-linuxarm64-cross.jar
 4. Copy the runnable jar, PiLogger-linuxarm64-cross.jar,  (this includes all necessary libs)  to the Pi.
 5. Plug in a USB drive mounted at `/mnt/usb_logs` and run the logger.
 6. After the match, remove the drive and open the `.wpilog` file in your viewer of choice.
@@ -56,7 +56,7 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
 5. Run the following to install software and setup usb drive mounts (chef’s kiss):
    
    ```powershell
-   ./setup-pi.bat
+   ./setup-pi.ps1
    ```
 6. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
 7. Insert usb stick into PI usb slot
@@ -64,7 +64,7 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
 8. Run the following to deploy and start your logger:
 
     ```powershell
-    ./deploy-pi.bat
+    ./deploy-pi.ps1
     ```
 
 Follow the [build instructions](docs/boot_script_instructions.md) above for any issues with the service. You’re built different now. ✨
