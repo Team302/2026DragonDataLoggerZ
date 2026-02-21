@@ -1,4 +1,3 @@
-@echo off
 setlocal
 
 set USER=frc302
@@ -17,14 +16,15 @@ if errorlevel 1 (
 )
 
 REM Copy the deploy script
-scp -i %KEY% ./deploy/pi-logger/home/frc302/deploy-pi.sh %LOGIN%:/home/frc302/deploy-pi.sh
+scp -i "%KEY%" ./deploy/pi-logger/home/frc302/deploy-pi.sh %LOGIN%:/home/frc302/deploy-pi.sh
 if errorlevel 1 (
-scp -i "%KEY%" ./build/libs/PiLogger-linuxarm64-cross.jar "%LOGIN%:/tmp/PiLogger-linuxarm64-cross.jar"
-
-REM Copy the deploy script
-scp -i "%KEY%" ./deploy/pi-logger/home/frc302/deploy-pi.sh "%LOGIN%:/home/frc302/deploy-pi.sh"
+    echo ERROR: Failed to copy deploy script to %HOST%.
+    endlocal
+    exit /b 1
+)
 
 REM Make the script executable and run it
+echo Running deploy script on %HOST%...
 ssh -i "%KEY%" "%LOGIN%" "chmod +x /home/frc302/deploy-pi.sh && /home/frc302/deploy-pi.sh"
 if errorlevel 1 (
     echo ERROR: Failed to execute deploy script on %HOST%.
