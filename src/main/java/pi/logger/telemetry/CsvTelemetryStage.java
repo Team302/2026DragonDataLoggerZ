@@ -15,10 +15,12 @@
 package pi.logger.telemetry;
 
 import pi.logger.datalog.USBFileLogger;
+import pi.logger.telemetry.TelemetryArrayHelper;
 
 public final class CsvTelemetryStage implements TelemetryStage {
     @Override
-    public void apply(TelemetryContext context) {
+    public void apply(TelemetryContext context) 
+    {
         if (context.payloadType() != TelemetryPayloadType.CSV) {
             return;
         }
@@ -27,5 +29,38 @@ public final class CsvTelemetryStage implements TelemetryStage {
             return;
         }
         USBFileLogger.logCsvPayload(payload);
+        String[] parts = payload.split(",", 5);
+        if (parts.length < 4) {
+            System.err.println("Invalid message format: " + payload);
+            return;
+        }
+
+        String signalId = parts[1].trim();
+        String type = parts[2].trim();
+        String value = parts[3].trim();
+        String units = parts.length > 4 ? parts[4].trim() : "";
+
+        if ("bool_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value));
+        }
+        else if ("int_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value));
+        }
+        else if ("double_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value));
+        }
+        else if ("float_array".equalsIgnoreCase(type))
+        {
+            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value));
+        }
+        else
+        {
+            USBFileLogger.logCsvPayload(payload);
+            return;
+        }
+
     }
 }
