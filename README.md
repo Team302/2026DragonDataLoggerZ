@@ -30,9 +30,9 @@ No cap, this logger is a W for your drive team. Let's go! 🚀
 
 ### Getting Started 🛠️
 
-1. Build the project with `./gradlew build` (or `./build.bat` on Windows).
-2. Test the project on Windows using run.bat (this will start udp listening locally)
-3. If deploying to the pi, run build-pi.bat. This will create a jar in the build/libs folder called PiLogger-linuxarm64-cross.jar
+1. Build the project with `./gradlew build` (or `./build.ps1` on Windows).
+2. Test the project on Windows using run.ps1 (this will start udp listening locally)
+3. If deploying to the pi, run build-pi.ps1. This will create a jar in the build/libs folder called PiLogger-linuxarm64-cross.jar
 4. Copy the runnable jar, PiLogger-linuxarm64-cross.jar,  (this includes all necessary libs)  to the Pi.
 5. Plug in a USB drive mounted at `/mnt/usb_logs` and run the logger.
 6. After the match, remove the drive and open the `.wpilog` file in your viewer of choice.
@@ -48,27 +48,33 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
     2. Have it connect to Wi‑Fi for the next step
     3. Create user `frc302` with password `dragons`
 3. Insert the SD card into the Pi (let it cook)
-4. Run the following on the Pi to setup software (chef’s kiss):
+4. Run the following to setup initial login (add a pinch of salt for flavor):
 
-    ```bash
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install openjdk-21-jdk
+    ```powershell
+    ./setup-pi-key.ps1
     ```    
-5. Run the following on the pi to setup the usb drive (so your logs don’t ghost you):
+5. Run the following to install software and setup usb drive mounts (chef’s kiss):
    
-   ```bash
-   sudo mkdir -p /mnt/usb_logs
-   sudo chown frc302:frc302 /mnt/usb_logs
-   
-   # Update /etc/fstab with this line
-   LABEL=ROBOT_LOGS /mnt/usb_logs vfat defaults,nofail,noatime,uid=1000,gid=1000,umask=0022 0 0
-   
+   ```powershell
+   ./setup-pi.ps1
    ```
-5. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
-5. Insert usb stick into PI usb slot
-6. Follow the [build instructions](docs/boot_script_instructions.md) above for the rest of the setup. You’re built different now. ✨
+6. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
+7. Insert usb stick into PI usb slot
 
+8. Run the following to deploy and start your logger:
+
+    ```powershell
+    ./deploy-pi.ps1
+    ```
+
+Follow the [build instructions](docs/boot_script_instructions.md) above for any issues with the service. You’re built different now. ✨
+
+### SSH into the pi
+To SSH into the pi, run the following command on your local machine:
+
+```powershell
+./ssh-pi.ps1
+```
 
 ### Enable / Disable the Wifi on the PI
 To disable the wifi, run the following command on the pi:

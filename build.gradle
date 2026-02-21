@@ -44,8 +44,6 @@ nativeConfig.dependencies.add wpilibTools.deps.wpilib("cscore")
 
 
 dependencies {
-    //implementation wpi.java.deps.wpilib()
-    //implementation wpi.java.vendor.java()
 
     implementation wpilibTools.deps.wpilibJava("wpiutil")
     implementation wpilibTools.deps.wpilibJava("wpimath")
@@ -117,13 +115,19 @@ task shadowJarArm64(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
     from sourceSets.main.output
     configurations = [project.configurations.runtimeClasspath]
     exclude("module-info.class")
+    // Exclude Windows native libraries from the jar
+    exclude {
+        def path = it.path.toLowerCase()
+        path.contains("windows/") || path.contains("win32/") || path.contains("x86-64/") ||
+        path.contains("windowsx86-64.zip") || path.contains("win32.zip") || path.contains("x86-64.zip") ||
+        path.endsWith(".so.debug")
+    }
     manifest {
         attributes 'Main-Class': 'pi.logger.PiLogger'
     }
     mergeServiceFiles()
-    
     // Extract ARM64 natives from ZIP files and include them
-    from(project.configurations.arm64Natives.collect { 
-        it.name.endsWith('.zip') ? zipTree(it) : it 
+    from(project.configurations.arm64Natives.collect {
+        it.name.endsWith('.zip') ? zipTree(it) : it
     })
 }
