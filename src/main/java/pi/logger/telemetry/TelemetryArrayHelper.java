@@ -16,20 +16,20 @@ package pi.logger.telemetry;
 
 public final class TelemetryArrayHelper {
     private TelemetryArrayHelper() {}
-    public static boolean[] getBooleanArray(String payloadString) 
+    public static boolean[] getBooleanArray(String payloadString)
     {
         String[] parts = payloadString.split(";");
         boolean[] boolArray = new boolean[parts.length];
-        for (int i = 1; i < parts.length; i++) {
+        for (int i = 0; i < parts.length; i++) {
             boolArray[i] = Boolean.parseBoolean(parts[i]);
         }
         return boolArray;
     }
-    public static float[] getFloatArray(String payloadString) 
+    public static float[] getFloatArray(String payloadString)
     {
         String[] parts = payloadString.split(";");
         float[] floatArray = new float[parts.length];
-        for (int i = 1; i < parts.length; i++) {
+        for (int i = 0; i < parts.length; i++) {
             floatArray[i] = Float.parseFloat(parts[i]);
         }
         return floatArray;
@@ -38,7 +38,7 @@ public final class TelemetryArrayHelper {
     {
         String[] parts = payloadString.split(";");
         long[] longArray = new long[parts.length];
-        for (int i = 1; i < parts.length; i++) {
+        for (int i = 0; i < parts.length; i++) {
             longArray[i] = Long.parseLong(parts[i]);
         }
         return longArray;
@@ -47,7 +47,7 @@ public final class TelemetryArrayHelper {
     {
         String[] parts = payloadString.split(";");
         double[] doubleArray = new double[parts.length];
-        for (int i = 1; i < parts.length; i++) {
+        for (int i = 0; i < parts.length; i++) {
             doubleArray[i] = Double.parseDouble(parts[i]);
         }
         return doubleArray;

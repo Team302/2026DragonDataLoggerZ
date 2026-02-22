@@ -89,7 +89,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "double")
             );
-            dataLog.appendDouble(entryId, value, timestampMicros);
+            dataLog.appendDouble(entryId, value, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -105,7 +105,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "int64")
             );
-            dataLog.appendInteger(entryId, value, timestampMicros);
+            dataLog.appendInteger(entryId, value, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -121,7 +121,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "boolean")
             );
-            dataLog.appendBoolean(entryId, value, timestampMicros);
+            dataLog.appendBoolean(entryId, value, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -137,7 +137,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "string")
             );
-            dataLog.appendString(entryId, value, timestampMicros);
+            dataLog.appendString(entryId, value, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -153,7 +153,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "boolean[]")
             );
-            dataLog.appendBooleanArray(entryId, values, timestampMicros);
+            dataLog.appendBooleanArray(entryId, values, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -169,7 +169,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "double[]")
             );
-            dataLog.appendDoubleArray(entryId, values, timestampMicros);
+            dataLog.appendDoubleArray(entryId, values, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -184,7 +184,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "int64[]")
             );
-            dataLog.appendIntegerArray(entryId, values, timestampMicros);
+            dataLog.appendIntegerArray(entryId, values, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -199,7 +199,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "float[]")
             );
-            dataLog.appendFloatArray(entryId, values, timestampMicros);
+            dataLog.appendFloatArray(entryId, values, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -232,7 +232,7 @@ public final class USBFileLogger {
         logStructEntry(name, value, pi.logger.structs.SwerveModuleState.struct, timestampMicros);
     }
 
-    public static <T> void logStructEntry(String name, T value, Struct<T> struct, long timestampMicros) {
+    public static <T> void logStructEntry(String name, T value, Struct<T> struct, long timestamp) {
         if (dataLog == null || value == null || struct == null) return;
 
         synchronized (structEntries) {
@@ -241,7 +241,7 @@ public final class USBFileLogger {
                 name,
                 k -> StructLogEntry.create(dataLog, k, struct)
             );
-            entry.append(value, timestampMicros);
+            entry.append(value, timestamp/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -255,7 +255,7 @@ public final class USBFileLogger {
                 name,
                 k -> StructArrayLogEntry.create(dataLog, k, elementStruct)
             );
-            entry.append(values, timestampMicros);
+            entry.append(values, timestampMicros/100000000);
             recordWriteAndMaybeFlush();
         }
     }
@@ -334,7 +334,7 @@ public final class USBFileLogger {
                         System.err.println("Failed to parse double: " + value);
                     }
                 }
-                case "int", "integer", "long" -> {
+                case "int", "integer", "long", "int64" -> {
                     try {
                         long intValue = Long.parseLong(value);
                         logInteger(entryName, intValue, timestampMicros);
