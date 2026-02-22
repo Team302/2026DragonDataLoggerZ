@@ -245,4 +245,3 @@ task setupPi {
         println "${host} setup complete."
     }
 }
-
