@@ -33,6 +33,7 @@ import pi.logger.telemetry.TelemetryEvent;
 import pi.logger.telemetry.TelemetryPayloadType;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.telemetry.TelemetrySource;
+import pi.logger.utils.TimeUtils;
 
 public final class NetworkTablesLogger {
     
@@ -262,7 +263,7 @@ public final class NetworkTablesLogger {
             return;
         }
         TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
+            TimeUtils.nowUs(),
             TelemetrySource.NETWORK_TABLES,
             TelemetryPayloadType.STRUCT,
             channel,
@@ -277,7 +278,7 @@ public final class NetworkTablesLogger {
             return;
         }
         TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
+            TimeUtils.nowUs(),
             TelemetrySource.NETWORK_TABLES,
             TelemetryPayloadType.STRUCT_ARRAY,
             channel,
@@ -292,7 +293,7 @@ public final class NetworkTablesLogger {
             return;
         }
         TelemetryEvent event = new TelemetryEvent(
-            System.nanoTime(),
+            TimeUtils.nowUs(),
             TelemetrySource.NETWORK_TABLES,
             type,
             channel,
