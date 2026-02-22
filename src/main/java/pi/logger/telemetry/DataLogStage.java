@@ -26,97 +26,100 @@ public final class DataLogStage implements TelemetryStage {
             return;
         }
 
+        // Convert nanoseconds to microseconds for the WPILOG timestamp
+        long timestampMicros = event.timestampNs() / 1000;
+
         switch (event.payloadType()) {
-            case DOUBLE -> logDouble(event);
-            case INTEGER -> logInteger(event);
-            case BOOLEAN -> logBoolean(event);
-            case STRING -> logString(event);
-            case STRUCT -> logStruct(event);
-            case STRUCT_ARRAY -> logStructArray(event);
-            case BOOLEAN_ARRAY -> logBooleanArray(event);
-            case INTEGER_ARRAY -> logIntegerArray(event);
-            case DOUBLE_ARRAY -> logDoubleArray(event);
-            case FLOAT_ARRAY -> logFloatArray(event);
+            case DOUBLE -> logDouble(event, timestampMicros);
+            case INTEGER -> logInteger(event, timestampMicros);
+            case BOOLEAN -> logBoolean(event, timestampMicros);
+            case STRING -> logString(event, timestampMicros);
+            case STRUCT -> logStruct(event, timestampMicros);
+            case STRUCT_ARRAY -> logStructArray(event, timestampMicros);
+            case BOOLEAN_ARRAY -> logBooleanArray(event, timestampMicros);
+            case INTEGER_ARRAY -> logIntegerArray(event, timestampMicros);
+            case DOUBLE_ARRAY -> logDoubleArray(event, timestampMicros);
+            case FLOAT_ARRAY -> logFloatArray(event, timestampMicros);
             default -> {
                 // ignore unsupported types here
             }
         }
     }
 
-    private void logDouble(TelemetryEvent event) {
+    private void logDouble(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof Number number) {
-            USBFileLogger.logDouble(event.channel(), number.doubleValue());
+            USBFileLogger.logDouble(event.channel(), number.doubleValue(), timestampMicros);
         }
     }
 
-    private void logInteger(TelemetryEvent event) {
+    private void logInteger(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof Number number) {
-            USBFileLogger.logInteger(event.channel(), number.longValue());
+            USBFileLogger.logInteger(event.channel(), number.longValue(), timestampMicros);
         }
     }
 
-    private void logBoolean(TelemetryEvent event) {
+    private void logBoolean(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof Boolean bool) {
-            USBFileLogger.logBoolean(event.channel(), bool);
+            USBFileLogger.logBoolean(event.channel(), bool, timestampMicros);
         }
     }
 
-    private void logBooleanArray(TelemetryEvent event) {
+    private void logBooleanArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof boolean[] boolArray) {
-            USBFileLogger.logBooleanArray(event.channel(), boolArray);
+            USBFileLogger.logBooleanArray(event.channel(), boolArray, timestampMicros);
         }
     }
 
-    private void logIntegerArray(TelemetryEvent event) {
+    private void logIntegerArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof long[] longArray) {
-            USBFileLogger.logIntegerArray(event.channel(), longArray);
+            USBFileLogger.logIntegerArray(event.channel(), longArray, timestampMicros);
         }
     }
 
-    private void logDoubleArray(TelemetryEvent event) {
+    private void logDoubleArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof double[] doubleArray) {
-            USBFileLogger.logDoubleArray(event.channel(), doubleArray);
+            USBFileLogger.logDoubleArray(event.channel(), doubleArray, timestampMicros);
         }
     }
 
-    private void logFloatArray(TelemetryEvent event) {
+    private void logFloatArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof float[] floatArray) {
-            USBFileLogger.logFloatArray(event.channel(), floatArray);
+            USBFileLogger.logFloatArray(event.channel(), floatArray, timestampMicros);
         }
     }
 
-    private void logString(TelemetryEvent event) {
+    private void logString(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload != null) {
-            USBFileLogger.logString(event.channel(), payload.toString());
+            USBFileLogger.logString(event.channel(), payload.toString(), timestampMicros);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void logStruct(TelemetryEvent event) {
+    private void logStruct(TelemetryEvent event, long timestampMicros) {
         Struct<Object> struct = (Struct<Object>) event.structSchema();
         if (struct == null || event.payload() == null) {
             return;
         }
-        USBFileLogger.logStructEntry(event.channel(), event.payload(), struct);
+        USBFileLogger.logStructEntry(event.channel(), event.payload(), struct, timestampMicros);
     }
 
     @SuppressWarnings("unchecked")
-    private void logStructArray(TelemetryEvent event) {
+    private void logStructArray(TelemetryEvent event, long timestampMicros) {
         Struct<Object> struct = (Struct<Object>) event.structSchema();
         if (struct == null || event.payload() == null) {
             return;
         }
         Object payload = event.payload();
         if (payload instanceof Object[] array) {
-            USBFileLogger.logStructArray(event.channel(), array, struct);
+            USBFileLogger.logStructArray(event.channel(), array, struct, timestampMicros);
         }
     }
 }

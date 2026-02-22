@@ -17,7 +17,6 @@ package pi.logger.telemetry;
 import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.csvparsers.Pose2dUtil;
 import pi.logger.datalog.USBFileLogger;
-import pi.logger.telemetry.TelemetryArrayHelper;
 
 public final class CsvTelemetryStage implements TelemetryStage {
     @Override
@@ -34,6 +33,10 @@ public final class CsvTelemetryStage implements TelemetryStage {
             return;
         }
 
+        // Parse the CSV timestamp (parts[0]) as microseconds for the WPILOG file.
+        // The robot sends a numeric timestamp; fall back to 0 if unparseable.
+        long timestampMicros = parseTimestampMicros(parts[0].trim());
+
         String signalId = parts[1].trim();
         String type = parts[2].trim();
         String value = parts[3].trim();
@@ -41,19 +44,19 @@ public final class CsvTelemetryStage implements TelemetryStage {
 
         if ("bool_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value));
+            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value), timestampMicros);
         }
         else if ("int_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value));
+            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value), timestampMicros);
         }
         else if ("double_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value));
+            USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value), timestampMicros);
         }
         else if ("float_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value));
+            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value), timestampMicros);
         }
         else if (signalId.toLowerCase().contains("pose2d")) {
             Pose2d pose = Pose2dUtil.fromString(value);
@@ -71,8 +74,30 @@ public final class CsvTelemetryStage implements TelemetryStage {
             TelemetryProcessor.publish(poseEvent);
             
         } else {
-            USBFileLogger.logCsvPayload(payload);
+            USBFileLogger.logCsvPayload(payload, timestampMicros);
         }
         
+    }
+    /**
+     * Parse the CSV timestamp string into microseconds for the WPILOG file.
+     * Accepts integer microseconds directly. If the value contains a decimal
+     * point it is treated as seconds and converted to microseconds.
+     * Returns 0 on any parse failure so logging still proceeds.
+     */
+    private static long parseTimestampMicros(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return 0;
+        }
+        try {
+            if (raw.contains(".")) {
+                // Treat as seconds (e.g. FPGA timestamp from WPILib Timer.getFPGATimestamp())
+                double seconds = Double.parseDouble(raw);
+                return (long) (seconds * 1_000_000);
+            }
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse CSV timestamp: " + raw);
+            return 0;
+        }
     }
 }

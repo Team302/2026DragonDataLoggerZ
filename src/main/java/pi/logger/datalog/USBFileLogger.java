@@ -81,7 +81,7 @@ public final class USBFileLogger {
     /**
      * Log a double value from an external source (e.g., NetworkTables)
      */
-    public static void logDouble(String name, double value) {
+    public static void logDouble(String name, double value, long timestampMicros) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -89,7 +89,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "double")
             );
-            dataLog.appendDouble(entryId, value, 0);
+            dataLog.appendDouble(entryId, value, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -97,7 +97,7 @@ public final class USBFileLogger {
     /**
      * Log an integer value from an external source
      */
-    public static void logInteger(String name, long value) {
+    public static void logInteger(String name, long value, long timestampMicros) {
         if (dataLog == null) return;
 
         synchronized (entryIds) {
@@ -105,7 +105,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "int64")
             );
-            dataLog.appendInteger(entryId, value, 0);
+            dataLog.appendInteger(entryId, value, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -113,7 +113,7 @@ public final class USBFileLogger {
     /**
      * Log a boolean value from an external source
      */
-    public static void logBoolean(String name, boolean value) {
+    public static void logBoolean(String name, boolean value, long timestampMicros) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -121,7 +121,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "boolean")
             );
-            dataLog.appendBoolean(entryId, value, 0);
+            dataLog.appendBoolean(entryId, value, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -129,7 +129,7 @@ public final class USBFileLogger {
     /**
      * Log a string value from an external source
      */
-    public static void logString(String name, String value) {
+    public static void logString(String name, String value, long timestampMicros) {
         if (dataLog == null) return;
         
         synchronized (entryIds) {
@@ -137,7 +137,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "string")
             );
-            dataLog.appendString(entryId, value, 0);
+            dataLog.appendString(entryId, value, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -145,7 +145,7 @@ public final class USBFileLogger {
     /**
      * Log a boolean array from an external source
      */
-    public static void logBooleanArray(String name, boolean[] values) {
+    public static void logBooleanArray(String name, boolean[] values, long timestampMicros) {
         if (dataLog == null) return;
 
         synchronized (entryIds) {
@@ -153,7 +153,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "boolean[]")
             );
-            dataLog.appendBooleanArray(entryId, values, 0);
+            dataLog.appendBooleanArray(entryId, values, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -161,7 +161,7 @@ public final class USBFileLogger {
     /**
      * Log a double array from an external source
      */
-    public static void logDoubleArray(String name, double[] values) {
+    public static void logDoubleArray(String name, double[] values, long timestampMicros) {
         if (dataLog == null) return;
 
         synchronized (entryIds) {
@@ -169,14 +169,14 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "double[]")
             );
-            dataLog.appendDoubleArray(entryId, values, 0);
+            dataLog.appendDoubleArray(entryId, values, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
         /**
         * Log an integer array from an external source
         */
-    public static void logIntegerArray(String name, long[] values) {
+    public static void logIntegerArray(String name, long[] values, long timestampMicros) {
         if (dataLog == null) return;
 
         synchronized (entryIds) {
@@ -184,14 +184,14 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "int64[]")
             );
-            dataLog.appendIntegerArray(entryId, values, 0);
+            dataLog.appendIntegerArray(entryId, values, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
         /**
         * Log a float array from an external source
         */
-    public static void logFloatArray(String name, float[] values) {
+    public static void logFloatArray(String name, float[] values, long timestampMicros) {
         if (dataLog == null) return;
 
         synchronized (entryIds) {
@@ -199,7 +199,7 @@ public final class USBFileLogger {
                 name,
                 k -> dataLog.start(k, "float[]")
             );
-            dataLog.appendFloatArray(entryId, values, 0);
+            dataLog.appendFloatArray(entryId, values, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -207,32 +207,32 @@ public final class USBFileLogger {
     /**
      * Log a Pose2d struct from an external source (e.g., NetworkTables)
      */
-    public static void logStruct(String name, Pose2d value) {
-        logStructEntry(name, value, Pose2d.struct);
+    public static void logStruct(String name, Pose2d value, long timestampMicros) {
+        logStructEntry(name, value, Pose2d.struct, timestampMicros);
     }
 
     /**
      * Log a ChassisSpeeds struct
      */
-    public static void logStruct(String name, ChassisSpeeds value) {
-        logStructEntry(name, value, ChassisSpeeds.struct);
+    public static void logStruct(String name, ChassisSpeeds value, long timestampMicros) {
+        logStructEntry(name, value, ChassisSpeeds.struct, timestampMicros);
     }
 
     /**
      * Log a SwerveModulePosition struct
      */
-    public static void logStruct(String name, pi.logger.structs.SwerveModulePosition value) {
-        logStructEntry(name, value, pi.logger.structs.SwerveModulePosition.struct);
+    public static void logStruct(String name, pi.logger.structs.SwerveModulePosition value, long timestampMicros) {
+        logStructEntry(name, value, pi.logger.structs.SwerveModulePosition.struct, timestampMicros);
     }
 
     /**
      * Log a SwerveModuleState struct
      */
-    public static void logStruct(String name, pi.logger.structs.SwerveModuleState value) {
-        logStructEntry(name, value, pi.logger.structs.SwerveModuleState.struct);
+    public static void logStruct(String name, pi.logger.structs.SwerveModuleState value, long timestampMicros) {
+        logStructEntry(name, value, pi.logger.structs.SwerveModuleState.struct, timestampMicros);
     }
 
-    public static <T> void logStructEntry(String name, T value, Struct<T> struct) {
+    public static <T> void logStructEntry(String name, T value, Struct<T> struct, long timestampMicros) {
         if (dataLog == null || value == null || struct == null) return;
 
         synchronized (structEntries) {
@@ -241,12 +241,12 @@ public final class USBFileLogger {
                 name,
                 k -> StructLogEntry.create(dataLog, k, struct)
             );
-            entry.append(value, 0);
+            entry.append(value, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
 
-    public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct) {
+    public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct, long timestampMicros) {
         if (dataLog == null || values == null) return;
 
         synchronized (structArrayEntries) {
@@ -255,7 +255,7 @@ public final class USBFileLogger {
                 name,
                 k -> StructArrayLogEntry.create(dataLog, k, elementStruct)
             );
-            entry.append(values, 0);
+            entry.append(values, timestampMicros);
             recordWriteAndMaybeFlush();
         }
     }
@@ -302,7 +302,7 @@ public final class USBFileLogger {
         }
     }
 
-    public static void logCsvPayload(String payload) {
+    public static void logCsvPayload(String payload, long timestampMicros) {
         if (payload == null || dataLog == null) {
             return;
         }
@@ -329,7 +329,7 @@ public final class USBFileLogger {
                 case "double", "float" -> {
                     try {
                         double doubleValue = Double.parseDouble(value);
-                        logDouble(entryName, doubleValue);
+                        logDouble(entryName, doubleValue, timestampMicros);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse double: " + value);
                     }
@@ -337,17 +337,17 @@ public final class USBFileLogger {
                 case "int", "integer", "long" -> {
                     try {
                         long intValue = Long.parseLong(value);
-                        logInteger(entryName, intValue);
+                        logInteger(entryName, intValue, timestampMicros);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse integer: " + value);
                     }
                 }
-                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value));
-                case "string", "str" -> logString(entryName, value);
+                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value), timestampMicros);
+                case "string", "str" -> logString(entryName, value, timestampMicros);
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
                     // Default to string for unknown types
-                    logString(entryName, value);
+                    logString(entryName, value, timestampMicros);
                 }
             }
 
