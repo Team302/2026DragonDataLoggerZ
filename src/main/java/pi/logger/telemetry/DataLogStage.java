@@ -42,28 +42,28 @@ public final class DataLogStage implements TelemetryStage {
     private void logDouble(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof Number number) {
-            USBFileLogger.logDouble(event.channel(), number.doubleValue());
+            USBFileLogger.logDouble(event.channel(), number.doubleValue(), event.timestampUs());
         }
     }
 
     private void logInteger(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof Number number) {
-            USBFileLogger.logInteger(event.channel(), number.longValue());
+            USBFileLogger.logInteger(event.channel(), number.longValue(), event.timestampUs());
         }
     }
 
     private void logBoolean(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof Boolean bool) {
-            USBFileLogger.logBoolean(event.channel(), bool);
+            USBFileLogger.logBoolean(event.channel(), bool, event.timestampUs());
         }
     }
 
     private void logString(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload != null) {
-            USBFileLogger.logString(event.channel(), payload.toString());
+            USBFileLogger.logString(event.channel(), payload.toString(), event.timestampUs());
         }
     }
 
@@ -73,7 +73,7 @@ public final class DataLogStage implements TelemetryStage {
         if (struct == null || event.payload() == null) {
             return;
         }
-        USBFileLogger.logStructEntry(event.channel(), event.payload(), struct);
+        USBFileLogger.logStructEntry(event.channel(), event.payload(), struct, event.timestampUs());
     }
 
     @SuppressWarnings("unchecked")
@@ -84,7 +84,7 @@ public final class DataLogStage implements TelemetryStage {
         }
         Object payload = event.payload();
         if (payload instanceof Object[] array) {
-            USBFileLogger.logStructArray(event.channel(), array, struct);
+            USBFileLogger.logStructArray(event.channel(), array, struct, event.timestampUs());
         }
     }
 }

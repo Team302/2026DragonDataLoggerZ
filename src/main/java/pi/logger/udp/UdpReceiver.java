@@ -25,6 +25,7 @@ import pi.logger.telemetry.TelemetryPayloadType;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.telemetry.TelemetrySource;
 import pi.logger.config.LoggerConfig;
+import pi.logger.utils.TimeUtils;
 
 public final class UdpReceiver {
 
@@ -85,7 +86,7 @@ public final class UdpReceiver {
 
                 s.receive(packet); // blocking
 
-                long timestamp = System.nanoTime();
+                long timestamp = TimeUtils.nowUs();
 
                 byte[] payload = new byte[packet.getLength()];
                 System.arraycopy(

@@ -41,7 +41,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
         String units = parts.length > 4 ? parts[4].trim() : "";
 
         if (!"double_array".equalsIgnoreCase(type)) {
-            USBFileLogger.logCsvPayload(payload);
+            USBFileLogger.logCsvPayload(payload, context.getEvent().timestampUs());
             return;
         }
 
@@ -51,7 +51,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
             //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
             TelemetryEvent original = context.getEvent();
             TelemetryEvent poseEvent = new TelemetryEvent(
-                    original.timestampNs(),
+                    original.timestampUs(),
                     original.source(),
                     TelemetryPayloadType.STRUCT,
                     entryName,
@@ -61,7 +61,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
             TelemetryProcessor.publish(poseEvent);
             
         } else {
-            USBFileLogger.logCsvPayload(payload);
+            USBFileLogger.logCsvPayload(payload, context.getEvent().timestampUs());
         }
         
     }
