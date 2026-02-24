@@ -28,6 +28,7 @@ import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
 import edu.wpi.first.util.struct.Struct;
 import pi.logger.config.LoggerConfig;
+import pi.logger.utils.TimeUtils;
 
 public final class USBFileLogger {
 
@@ -61,6 +62,8 @@ public final class USBFileLogger {
     private USBFileLogger() {}
 
     public static void start() {
+        // Initialize the relative time clock so all log timestamps start near 0
+        TimeUtils.initialize();
         System.out.println("USBFileLogger config: maxFileAgeMs=" + maxFileAgeMs
         + ", flushEntryThreshold=" + flushEntryThreshold
         + ", flushTimeThresholdMs=" + flushTimeThresholdMs);
@@ -78,184 +81,102 @@ public final class USBFileLogger {
         }
     }
 
-    /**
-     * Log a double value from an external source (e.g., NetworkTables)
-     */
-    public static void logDouble(String name, double value, long timestampMicros) {
+    public static void logDouble(String name, double value, long timestampUs) {
         if (dataLog == null) return;
-        
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "double")
-            );
-            dataLog.appendDouble(entryId, value, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "double", "", timestampUs));
+            dataLog.appendDouble(entryId, value, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log an integer value from an external source
-     */
-    public static void logInteger(String name, long value, long timestampMicros) {
+    public static void logInteger(String name, long value, long timestampUs) {
         if (dataLog == null) return;
-
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "int64")
-            );
-            dataLog.appendInteger(entryId, value, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "int64", "", timestampUs));
+            dataLog.appendInteger(entryId, value, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log a boolean value from an external source
-     */
-    public static void logBoolean(String name, boolean value, long timestampMicros) {
+    public static void logBoolean(String name, boolean value, long timestampUs) {
         if (dataLog == null) return;
-        
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "boolean")
-            );
-            dataLog.appendBoolean(entryId, value, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "boolean", "", timestampUs));
+            dataLog.appendBoolean(entryId, value, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log a string value from an external source
-     */
-    public static void logString(String name, String value, long timestampMicros) {
+    public static void logString(String name, String value, long timestampUs) {
         if (dataLog == null) return;
-        
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "string")
-            );
-            dataLog.appendString(entryId, value, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "string", "", timestampUs));
+            dataLog.appendString(entryId, value, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log a boolean array from an external source
-     */
-    public static void logBooleanArray(String name, boolean[] values, long timestampMicros) {
+    public static void logBooleanArray(String name, boolean[] values, long timestampUs) {
         if (dataLog == null) return;
-
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "boolean[]")
-            );
-            dataLog.appendBooleanArray(entryId, values, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "boolean[]", "", timestampUs));
+            dataLog.appendBooleanArray(entryId, values, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log a double array from an external source
-     */
-    public static void logDoubleArray(String name, double[] values, long timestampMicros) {
+    public static void logDoubleArray(String name, double[] values, long timestampUs) {
         if (dataLog == null) return;
-
         synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "double[]")
-            );
-            dataLog.appendDoubleArray(entryId, values, timestampMicros/100000000);
-            recordWriteAndMaybeFlush();
-        }
-    }
-        /**
-        * Log an integer array from an external source
-        */
-    public static void logIntegerArray(String name, long[] values, long timestampMicros) {
-        if (dataLog == null) return;
-
-        synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "int64[]")
-            );
-            dataLog.appendIntegerArray(entryId, values, timestampMicros/100000000);
-            recordWriteAndMaybeFlush();
-        }
-    }
-        /**
-        * Log a float array from an external source
-        */
-    public static void logFloatArray(String name, float[] values, long timestampMicros) {
-        if (dataLog == null) return;
-
-        synchronized (entryIds) {
-            int entryId = entryIds.computeIfAbsent(
-                name,
-                k -> dataLog.start(k, "float[]")
-            );
-            dataLog.appendFloatArray(entryId, values, timestampMicros/100000000);
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "double[]", "", timestampUs));
+            dataLog.appendDoubleArray(entryId, values, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    /**
-     * Log a Pose2d struct from an external source (e.g., NetworkTables)
-     */
-    public static void logStruct(String name, Pose2d value, long timestampMicros) {
-        logStructEntry(name, value, Pose2d.struct, timestampMicros);
+    public static void logIntegerArray(String name, long[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "int64[]", "", timestampUs));
+            dataLog.appendIntegerArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
     }
 
-    /**
-     * Log a ChassisSpeeds struct
-     */
-    public static void logStruct(String name, ChassisSpeeds value, long timestampMicros) {
-        logStructEntry(name, value, ChassisSpeeds.struct, timestampMicros);
+    public static void logFloatArray(String name, float[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "float[]", "", timestampUs));
+            dataLog.appendFloatArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
     }
 
-    /**
-     * Log a SwerveModulePosition struct
-     */
-    public static void logStruct(String name, pi.logger.structs.SwerveModulePosition value, long timestampMicros) {
-        logStructEntry(name, value, pi.logger.structs.SwerveModulePosition.struct, timestampMicros);
+    public static <T> void logStructEntry(String name, T value, Struct<T> struct) {
+        logStructEntry(name, value, struct, TimeUtils.nowUs());
     }
 
-    /**
-     * Log a SwerveModuleState struct
-     */
-    public static void logStruct(String name, pi.logger.structs.SwerveModuleState value, long timestampMicros) {
-        logStructEntry(name, value, pi.logger.structs.SwerveModuleState.struct, timestampMicros);
-    }
-
-    public static <T> void logStructEntry(String name, T value, Struct<T> struct, long timestamp) {
+    public static <T> void logStructEntry(String name, T value, Struct<T> struct, long timestampUs) {
         if (dataLog == null || value == null || struct == null) return;
-
         synchronized (structEntries) {
             @SuppressWarnings("unchecked")
             StructLogEntry<T> entry = (StructLogEntry<T>) structEntries.computeIfAbsent(
-                name,
-                k -> StructLogEntry.create(dataLog, k, struct)
+                name, k -> StructLogEntry.create(dataLog, k, struct, timestampUs)
             );
-            entry.append(value, timestamp/100000000);
+            entry.append(value, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
 
-    public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct, long timestampMicros) {
+    public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct, long timestampUs) {
         if (dataLog == null || values == null) return;
-
         synchronized (structArrayEntries) {
             @SuppressWarnings("unchecked")
             StructArrayLogEntry<T> entry = (StructArrayLogEntry<T>) structArrayEntries.computeIfAbsent(
-                name,
-                k -> StructArrayLogEntry.create(dataLog, k, elementStruct)
+                name, k -> StructArrayLogEntry.create(dataLog, k, elementStruct, timestampUs)
             );
-            entry.append(values, timestampMicros/100000000);
+            entry.append(values, timestampUs);
             recordWriteAndMaybeFlush();
         }
     }
@@ -302,7 +223,7 @@ public final class USBFileLogger {
         }
     }
 
-    public static void logCsvPayload(String payload, long timestampMicros) {
+    public static void logCsvPayload(String payload, long timestampUs) {
         if (payload == null || dataLog == null) {
             return;
         }
@@ -329,25 +250,25 @@ public final class USBFileLogger {
                 case "double", "float" -> {
                     try {
                         double doubleValue = Double.parseDouble(value);
-                        logDouble(entryName, doubleValue, timestampMicros);
+                        logDouble(entryName, doubleValue, timestampUs);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse double: " + value);
                     }
                 }
-                case "int", "integer", "long", "int64" -> {
+                case "int", "integer", "long" -> {
                     try {
                         long intValue = Long.parseLong(value);
-                        logInteger(entryName, intValue, timestampMicros);
+                        logInteger(entryName, intValue, timestampUs);
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse integer: " + value);
                     }
                 }
-                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value), timestampMicros);
-                case "string", "str" -> logString(entryName, value, timestampMicros);
+                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value), timestampUs);
+                case "string", "str" -> logString(entryName, value, timestampUs);
                 default -> {
                     System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
                     // Default to string for unknown types
-                    logString(entryName, value, timestampMicros);
+                    logString(entryName, value, timestampUs);
                 }
             }
 
@@ -375,16 +296,6 @@ public final class USBFileLogger {
 
             dataLog = new DataLogWriter(currentFile.getAbsolutePath());
             resetFlushState();
-
-            // Write a start-time entry at timestamp 0. Populate it with the
-            // current epoch microseconds so viewers that compute relative time
-            // (entry_time - start_time) will show 0 at the beginning of the file.
-            try {
-                long startEpochMicros = System.currentTimeMillis() * 1000L;
-                int startEntryId = dataLog.start(".startTime", "int64");
-                dataLog.appendInteger(startEntryId, startEpochMicros, 0L);
-                flush();
-            } catch (Exception ignored) {}
 
             fileStartTime = System.currentTimeMillis();
 

@@ -32,8 +32,8 @@ public final class TelemetryContext {
         return event;
     }
 
-    public long timestampNs() {
-        return event.timestampNs();
+    public long timestampUs() {
+        return event.timestampUs();
     }
 
     public String channel() {
