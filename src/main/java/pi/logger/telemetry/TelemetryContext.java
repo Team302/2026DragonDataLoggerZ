@@ -52,6 +52,9 @@ public final class TelemetryContext {
         if (event.payload() == null) {
             return null;
         }
+        if (event.payloadType() != TelemetryPayloadType.CSV) {
+            return null;
+        }
         if (event.payload() instanceof String s) {
             return s;
         }
