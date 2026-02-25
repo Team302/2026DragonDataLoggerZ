@@ -131,7 +131,7 @@ public class PiLogger {
         TelemetryProcessor.start();
 
         UdpReceiver.start();
-        // NetworkTablesLogger.start();
+        NetworkTablesLogger.start();
 
         System.out.println("Pi logger running");
 
