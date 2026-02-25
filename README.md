@@ -48,23 +48,43 @@ Every push and pull request to `main` automatically runs a Gradle build via GitH
     2. Have it connect to Wi‑Fi for the next step
     3. Create user `frc302` with password `dragons`
 3. Insert the SD card into the Pi (let it cook)
-4. Run the following on the Pi to setup software (chef’s kiss):
+4. Run the following to setup initial login (add a pinch of salt for flavor):
 
-    ```bash
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install openjdk-21-jdk
+    ```powershell
+    ./setup-pi-key.bat
     ```    
-5. Run the following on the pi to setup the usb drive (so your logs don’t ghost you):
+5. Run the following to install software and setup usb drive mounts (chef’s kiss):
    
-   ```bash
-   sudo mkdir -p /mnt/usb_logs
-   sudo chown frc302:frc302 /mnt/usb_logs
-   
-   # Update /etc/fstab with this line
-   LABEL=ROBOT_LOGS /mnt/usb_logs vfat defaults,nofail,noatime,uid=1000,gid=1000,umask=0022 0 0
-   
+   ```powershell
+   ./setup-pi.bat
    ```
-5. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
-5. Insert usb stick into PI usb slot
-6. Follow the [build instructions](docs/boot_script_instructions.md) above for the rest of the setup. You’re built different now. ✨
+6. Create a usb stick that is formatted FAT32 with the label ROBOT_LOGS
+7. Insert usb stick into PI usb slot
+
+8. Run the following to deploy and start your logger:
+
+    ```powershell
+    ./deploy-pi.bat
+    ```
+
+Follow the [build instructions](docs/boot_script_instructions.md) above for any issues with the service. You’re built different now. ✨
+
+### SSH into the pi
+To SSH into the pi, run the following command on your local machine:
+
+```powershell
+./ssh-pi.bat
+```
+
+### Enable / Disable the Wifi on the PI
+To disable the wifi, run the following command on the pi:
+
+```bash
+sudo nano /boot/firmware/config.txt
+```
+
+Then add the following line to the end of the file:
+
+```dtoverlay=disable-wifi
+```
+To re-enable the wifi, simply remove that line from the config.txt file.    
