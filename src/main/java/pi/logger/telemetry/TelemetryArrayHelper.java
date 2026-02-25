@@ -18,6 +18,10 @@ public final class TelemetryArrayHelper {
     private TelemetryArrayHelper() {}
     public static boolean[] getBooleanArray(String payloadString)
     {
+        if(payloadString == null || payloadString.isEmpty())
+        {
+            return new boolean[0];
+        }
         String[] parts = payloadString.split(";");
         boolean[] boolArray = new boolean[parts.length];
         for (int i = 0; i < parts.length; i++) {
@@ -27,6 +31,10 @@ public final class TelemetryArrayHelper {
     }
     public static float[] getFloatArray(String payloadString)
     {
+        if(payloadString == null || payloadString.isEmpty())
+        {
+            return new float[0];
+        }
         String[] parts = payloadString.split(";");
         float[] floatArray = new float[parts.length];
         for (int i = 0; i < parts.length; i++) {
@@ -36,6 +44,10 @@ public final class TelemetryArrayHelper {
     }
     public static long[] getIntArray(String payloadString) 
     {
+        if(payloadString == null || payloadString.isEmpty())
+        {
+            return new long[0];
+        }
         String[] parts = payloadString.split(";");
         long[] longArray = new long[parts.length];
         for (int i = 0; i < parts.length; i++) {
@@ -45,6 +57,10 @@ public final class TelemetryArrayHelper {
     }
     public static double[] getDoubleArray(String payloadString) 
     {
+        if(payloadString == null || payloadString.isEmpty())
+        {
+            return new double[0];
+        }
         String[] parts = payloadString.split(";");
         double[] doubleArray = new double[parts.length];
         for (int i = 0; i < parts.length; i++) {
