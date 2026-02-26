@@ -80,10 +80,20 @@ jar {
 test {
     useJUnitPlatform()
 
-    // Make WPILib native libraries (.dll/.so) available to the test JVM
-    def nativesDir = file("${buildDir}/NativeMain/AssembledResources/windows/x86-64/shared")
+    // Make WPILib native libraries (.dll/.so/.dylib) available to the test JVM.
+    // The AssembledResources layout is <os>/<arch>/shared, which doesn't match
+    // wpilibTools.currentPlatform.platformName, so we discover the shared dir at
+    // configuration time by finding any subdirectory named "shared".
     dependsOn processResources
-    jvmArgs "-Djava.library.path=${nativesDir.absolutePath}"
+    doFirst {
+        def sharedDirs = []
+        file("${buildDir}/NativeMain/AssembledResources").eachDirRecurse { dir ->
+            if (dir.name == "shared") sharedDirs << dir.absolutePath
+        }
+        if (!sharedDirs.isEmpty()) {
+            jvmArgs "-Djava.library.path=${sharedDirs.join(File.pathSeparator)}"
+        }
+    }
 }
 
 shadowJar {
