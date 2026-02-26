@@ -117,6 +117,42 @@ public final class USBFileLogger {
         }
     }
 
+    public static void logBooleanArray(String name, boolean[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "boolean[]", "", timestampUs));
+            dataLog.appendBooleanArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
+    public static void logDoubleArray(String name, double[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "double[]", "", timestampUs));
+            dataLog.appendDoubleArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
+    public static void logIntegerArray(String name, long[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "int64[]", "", timestampUs));
+            dataLog.appendIntegerArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
+    public static void logFloatArray(String name, float[] values, long timestampUs) {
+        if (dataLog == null) return;
+        synchronized (entryIds) {
+            int entryId = entryIds.computeIfAbsent(name, k -> dataLog.start(k, "float[]", "", timestampUs));
+            dataLog.appendFloatArray(entryId, values, timestampUs);
+            recordWriteAndMaybeFlush();
+        }
+    }
+
     public static <T> void logStructEntry(String name, T value, Struct<T> struct) {
         logStructEntry(name, value, struct, TimeUtils.nowUs());
     }
@@ -132,7 +168,6 @@ public final class USBFileLogger {
             recordWriteAndMaybeFlush();
         }
     }
-
 
     public static <T> void logStructArray(String name, T[] values, Struct<T> elementStruct, long timestampUs) {
         if (dataLog == null || values == null) return;
