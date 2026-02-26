@@ -70,28 +70,28 @@ public final class DataLogStage implements TelemetryStage {
      private void logBooleanArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof boolean[] boolArray) {
-            USBFileLogger.logBooleanArray(event.channel(), boolArray, timestampMicros);
+            USBFileLogger.logBooleanArray(event.channel(), boolArray, event.timestampUs());
         }
     }
 
     private void logIntegerArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof long[] longArray) {
-            USBFileLogger.logIntegerArray(event.channel(), longArray, timestampMicros);
+            USBFileLogger.logIntegerArray(event.channel(), longArray, event.timestampUs());
         }
     }
 
     private void logDoubleArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof double[] doubleArray) {
-            USBFileLogger.logDoubleArray(event.channel(), doubleArray, timestampMicros);
+            USBFileLogger.logDoubleArray(event.channel(), doubleArray, event.timestampUs());
         }
     }
 
     private void logFloatArray(TelemetryEvent event, long timestampMicros) {
         Object payload = event.payload();
         if (payload instanceof float[] floatArray) {
-            USBFileLogger.logFloatArray(event.channel(), floatArray, timestampMicros);
+            USBFileLogger.logFloatArray(event.channel(), floatArray, event.timestampUs());
         }
     }
 

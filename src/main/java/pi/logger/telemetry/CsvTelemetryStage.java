@@ -15,8 +15,10 @@
 package pi.logger.telemetry;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.units.measure.Time;
 import pi.logger.csvparsers.Pose2dUtil;
 import pi.logger.datalog.USBFileLogger;
+import pi.logger.utils.TimeUtils;
 
 public final class CsvTelemetryStage implements TelemetryStage {
     @Override
@@ -39,7 +41,6 @@ public final class CsvTelemetryStage implements TelemetryStage {
         // Parse the CSV timestamp (parts[0]) as microseconds for the WPILOG file.
         // The robot sends a numeric timestamp; fall back to 0 if unparseable.
         long timestampMicros = parseTimestampMicros(parts[0].trim());
-
         String signalId = parts[1].trim();
         String type = parts[2].trim();
         String value = parts[3].trim();
@@ -47,35 +48,35 @@ public final class CsvTelemetryStage implements TelemetryStage {
 
         if ("bool_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value), timestampMicros);
+            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value), TimeUtils.nowUs());
         }
         else if ("int_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value), timestampMicros);
+            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value), TimeUtils.nowUs());
         }
-        else if ("double_array".equalsIgnoreCase(type))
+        else if ("double_array".equalsIgnoreCase(type) )
         {
-            USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value), timestampMicros);
+            if (signalId.toLowerCase().contains("pose2d")) {
+                Pose2d pose = Pose2dUtil.fromString(value);
+                String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
+                //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
+                TelemetryEvent original = context.getEvent();
+                TelemetryEvent poseEvent = new TelemetryEvent(
+                        original.timestampUs(),
+                        original.source(),
+                        TelemetryPayloadType.STRUCT,
+                        entryName,
+                        pose,
+                        Pose2d.struct
+                );
+                TelemetryProcessor.publish(poseEvent);
+            } else {
+                USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value), TimeUtils.nowUs());
+            }
         }
         else if ("float_array".equalsIgnoreCase(type))
         {
-            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value), timestampMicros);
-        }
-        else if (signalId.toLowerCase().contains("pose2d")) {
-            Pose2d pose = Pose2dUtil.fromString(value);
-            String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
-            //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
-            TelemetryEvent original = context.getEvent();
-            TelemetryEvent poseEvent = new TelemetryEvent(
-                    original.timestampUs(),
-                    original.source(),
-                    TelemetryPayloadType.STRUCT,
-                    entryName,
-                    pose,
-                    Pose2d.struct
-            );
-            TelemetryProcessor.publish(poseEvent);
-            
+            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value), TimeUtils.nowUs()); 
         } else {
             USBFileLogger.logCsvPayload(payload, context.getEvent().timestampUs());
         }

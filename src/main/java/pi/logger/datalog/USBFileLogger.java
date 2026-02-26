@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import edu.wpi.first.math.geometry.Pose2d;
-import pi.logger.structs.ChassisSpeeds;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
