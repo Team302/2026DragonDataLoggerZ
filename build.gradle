@@ -144,7 +144,6 @@ task shadowJarArm64(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
     })
 }
 
-
 task scpJar(type: Exec) {
     def user = 'frc302'
     def host = 'dragondataloggerz.local'

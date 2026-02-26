@@ -67,6 +67,34 @@ public final class DataLogStage implements TelemetryStage {
         }
     }
 
+     private void logBooleanArray(TelemetryEvent event, long timestampMicros) {
+        Object payload = event.payload();
+        if (payload instanceof boolean[] boolArray) {
+            USBFileLogger.logBooleanArray(event.channel(), boolArray, timestampMicros);
+        }
+    }
+
+    private void logIntegerArray(TelemetryEvent event, long timestampMicros) {
+        Object payload = event.payload();
+        if (payload instanceof long[] longArray) {
+            USBFileLogger.logIntegerArray(event.channel(), longArray, timestampMicros);
+        }
+    }
+
+    private void logDoubleArray(TelemetryEvent event, long timestampMicros) {
+        Object payload = event.payload();
+        if (payload instanceof double[] doubleArray) {
+            USBFileLogger.logDoubleArray(event.channel(), doubleArray, timestampMicros);
+        }
+    }
+
+    private void logFloatArray(TelemetryEvent event, long timestampMicros) {
+        Object payload = event.payload();
+        if (payload instanceof float[] floatArray) {
+            USBFileLogger.logFloatArray(event.channel(), floatArray, timestampMicros);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private void logStruct(TelemetryEvent event) {
         Struct<Object> struct = (Struct<Object>) event.structSchema();

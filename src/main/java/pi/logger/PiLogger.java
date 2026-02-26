@@ -130,10 +130,10 @@ public class PiLogger {
         TelemetryProcessor.registerStage(new CsvTelemetryStage());
         TelemetryProcessor.registerStage(new DataLogStage());
         TelemetryProcessor.registerStage(new BatteryTelemetryStage());
+        TelemetryProcessor.start();
 
         UdpReceiver.start();
         NetworkTablesLogger.start();
-        TelemetryProcessor.start();
 
         System.out.println("Pi logger running");
 
