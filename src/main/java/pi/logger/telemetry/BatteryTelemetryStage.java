@@ -16,6 +16,7 @@ package pi.logger.telemetry;
 
 import pi.logger.config.LoggerConfig;
 import pi.logger.datalog.USBFileLogger;
+import pi.logger.utils.TimeUtils;
 
 /**
  * Telemetry stage that computes battery power metrics from RIO voltage and current events.
@@ -96,12 +97,13 @@ public final class BatteryTelemetryStage implements TelemetryStage {
 
         double watts = computeWatts(latestVoltage, latestCurrent);
         totalWattHours += watts * elapsedMs / MILLIS_PER_HOUR;
+        long timestampUs = TimeUtils.nowUs();
 
-        USBFileLogger.logDouble(WATTS_CHANNEL, watts);
-        USBFileLogger.logDouble(WATT_HOURS_CHANNEL, totalWattHours);
+        USBFileLogger.logDouble(WATTS_CHANNEL, watts, timestampUs);
+        USBFileLogger.logDouble(WATT_HOURS_CHANNEL, totalWattHours, timestampUs);
 
         if (detectBatteryChange(latestVoltage)) {
-            USBFileLogger.logBoolean(BATTERY_CHANGED_CHANNEL, true);
+            USBFileLogger.logBoolean(BATTERY_CHANGED_CHANNEL, true, timestampUs);
         }
     }
 
