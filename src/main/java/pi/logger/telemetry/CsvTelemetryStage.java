@@ -161,8 +161,14 @@ public final class CsvTelemetryStage implements TelemetryStage {
                         null);
 
                 default -> {
-                    System.err.println("Unknown CSV type: " + type);
-                    yield null;
+                    System.err.println("Unknown CSV type: " + type + " for entry: " + entryName + " (falling back to STRING)");
+                    yield new TelemetryEvent(
+                            timestampMicros,
+                            original.source(),
+                            TelemetryPayloadType.STRING,
+                            entryName,
+                            value,
+                            null);
                 }
             };
         } catch (NumberFormatException e) {
