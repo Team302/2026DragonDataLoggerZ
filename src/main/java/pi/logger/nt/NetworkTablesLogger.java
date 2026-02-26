@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.structs.ChassisSpeeds;
 import pi.logger.structs.SwerveModulePosition;
 import pi.logger.structs.SwerveModuleState;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArraySubscriber;
@@ -58,6 +59,8 @@ public final class NetworkTablesLogger {
     private static StructArraySubscriber<SwerveModulePosition> modulePositionsSubscriber;
     private static StructArraySubscriber<SwerveModuleState> moduleStatesSubscriber;
     private static StructArraySubscriber<SwerveModuleState> moduleTargetsSubscriber;
+    private static DoubleSubscriber rioVoltageSubscriber;
+    private static DoubleSubscriber rioCurrentSubscriber;
     // DriveState table reference used for simple entries (e.g., doubles)
     private static NetworkTable driveStateTable;
 
@@ -92,6 +95,14 @@ public final class NetworkTablesLogger {
                 .getStructArrayTopic("ModuleTargets", SwerveModuleState.struct)
                 .subscribe(createDefaultModuleStates());
 
+            // Subscribe to RIO voltage and current for battery telemetry
+            String rioNtTable = LoggerConfig.getString("battery.rioNtTable", "SmartDashboard");
+            String rioVoltageKey = LoggerConfig.getString("battery.rioVoltageKey", "RIO Voltage");
+            String rioCurrentKey = LoggerConfig.getString("battery.rioCurrentKey", "RIO Current");
+            NetworkTable rioTable = inst.getTable(rioNtTable);
+            rioVoltageSubscriber = rioTable.getDoubleTopic(rioVoltageKey).subscribe(Double.NaN);
+            rioCurrentSubscriber = rioTable.getDoubleTopic(rioCurrentKey).subscribe(Double.NaN);
+
             System.out.println("NetworkTables logger started");
 
             while (running) {
@@ -108,6 +119,8 @@ public final class NetworkTablesLogger {
                 logModulePositions();
                 // Log module targets
                 logModuleTargets();
+                // Log RIO voltage and current for battery telemetry
+                logRioPower();
 
                 // Update rate: 50Hz
                 Thread.sleep(20);
@@ -207,6 +220,21 @@ public final class NetworkTablesLogger {
         return defaults;
     }
 
+    private static void logRioPower() {
+        try {
+            double voltage = rioVoltageSubscriber.get(Double.NaN);
+            double current = rioCurrentSubscriber.get(Double.NaN);
+            if (!Double.isNaN(voltage)) {
+                publishScalar(TelemetryPayloadType.DOUBLE, "RIO/Voltage", voltage);
+            }
+            if (!Double.isNaN(current)) {
+                publishScalar(TelemetryPayloadType.DOUBLE, "RIO/Current", current);
+            }
+        } catch (Exception e) {
+            System.err.println("Error logging RIO power: " + e.getMessage());
+        }
+    }
+
     private static void closeSubs() {
         if (poseSubscriber != null) {
             poseSubscriber.close();
@@ -222,6 +250,12 @@ public final class NetworkTablesLogger {
         }
         if (moduleTargetsSubscriber != null) {
             moduleTargetsSubscriber.close();
+        }
+        if (rioVoltageSubscriber != null) {
+            rioVoltageSubscriber.close();
+        }
+        if (rioCurrentSubscriber != null) {
+            rioCurrentSubscriber.close();
         }
     }
 

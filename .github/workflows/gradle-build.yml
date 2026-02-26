@@ -33,3 +33,6 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew clean build shadowJar --stacktrace
+
+      - name: Run tests
+        run: ./gradlew test --stacktrace

@@ -71,6 +71,25 @@ public final class LoggerConfig {
         return raw.trim();
     }
 
+    public static double getDouble(String key, double defaultValue, double minAllowed) {
+        String raw = PROPERTIES.getProperty(key);
+        if (raw == null || raw.isBlank()) {
+            return defaultValue;
+        }
+
+        try {
+            double parsed = Double.parseDouble(raw.trim());
+            if (parsed < minAllowed) {
+                System.err.println("Invalid value for " + key + " (" + parsed + "). Using default " + defaultValue);
+                return defaultValue;
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid number for " + key + " ('" + raw + "'). Using default " + defaultValue);
+            return defaultValue;
+        }
+    }
+
     public static boolean getBoolean(String key, boolean defaultValue) {
         String raw = PROPERTIES.getProperty(key);
         if (raw == null || raw.isBlank()) {
