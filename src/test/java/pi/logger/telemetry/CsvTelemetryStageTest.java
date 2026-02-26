@@ -15,8 +15,10 @@
 package pi.logger.telemetry;
 
 import org.junit.jupiter.api.Test;
+import pi.logger.utils.TimeUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 
 /**
  * Tests for {@link CsvTelemetryStage} using the real-world UDP packet format:
@@ -33,7 +35,7 @@ class CsvTelemetryStageTest {
 
     /** Real-world raw UDP payload produced by the robot sender. */
     static final String RAW_PACKET =
-            "Em\t1726935951,/Chassis/FrontLeftModule/TargetState/Angle,double,1.36562,Speed, Angle";
+            "1726935951,/Chassis/FrontLeftModule/TargetState/Angle,double,1.36562,Speed, Angle";
 
     // ── factory helpers ─────────────────────────────────────────────────────────
 
@@ -69,39 +71,13 @@ class CsvTelemetryStageTest {
         return new TelemetryContext(event);
     }
 
-    // ── parseTimestampMicros ────────────────────────────────────────────────────
-
-    @Test
-    void parseTimestampMicros_udpFramingPrefix_returnsZero() {
-        assertEquals(0L, CsvTelemetryStage.parseTimestampMicros("Em\t1726935951"));
-    }
-
-    @Test
-    void parseTimestampMicros_plainInteger_returnsValueDirectly() {
-        assertEquals(1726935951L, CsvTelemetryStage.parseTimestampMicros("1726935951"));
-    }
-
-    @Test
-    void parseTimestampMicros_secondsWithDecimal_convertsToMicros() {
-        assertEquals(1_500_000L, CsvTelemetryStage.parseTimestampMicros("1.5"));
-    }
-
-    @Test
-    void parseTimestampMicros_emptyString_returnsZero() {
-        assertEquals(0L, CsvTelemetryStage.parseTimestampMicros(""));
-    }
-
-    @Test
-    void parseTimestampMicros_nullString_returnsZero() {
-        assertEquals(0L, CsvTelemetryStage.parseTimestampMicros(null));
-    }
 
     // ── buildEvent – real-world double packet ───────────────────────────────────
 
     @Test
     void buildEvent_doubleType_producesDoubleEvent() {
         String[] parts = RAW_PACKET.split(",", 5);
-        long ts       = CsvTelemetryStage.parseTimestampMicros(parts[0].trim());
+        long ts       = TimeUtils.parseTimestampMicros(parts[0].trim());
         String signalId = parts[1].trim();              // /Chassis/FrontLeftModule/TargetState/Angle
         String type     = parts[2].trim();              // double
         String value    = parts[3].trim();              // 1.36562
@@ -115,8 +91,8 @@ class CsvTelemetryStageTest {
         assertEquals(TelemetryPayloadType.DOUBLE, result.payloadType());
         assertEquals("/Chassis/FrontLeftModule/TargetState/Angle (Speed, Angle)", result.channel());
         assertEquals(1.36562, (Double) result.payload(), 1e-9);
-        assertEquals(0L, result.timestampUs(),
-                "timestamp should be 0 because the Em\\t prefix makes parsing fall back to 0");
+        assertEquals(1726935951L, result.timestampUs(),
+                "timestamp should equal the value parsed from the payload");
     }
 
     @Test
