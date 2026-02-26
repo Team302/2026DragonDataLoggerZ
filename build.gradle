@@ -79,6 +79,11 @@ jar {
 
 test {
     useJUnitPlatform()
+
+    // Make WPILib native libraries (.dll/.so) available to the test JVM
+    def nativesDir = file("${buildDir}/NativeMain/AssembledResources/windows/x86-64/shared")
+    dependsOn processResources
+    jvmArgs "-Djava.library.path=${nativesDir.absolutePath}"
 }
 
 shadowJar {
