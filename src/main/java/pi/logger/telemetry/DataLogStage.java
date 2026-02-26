@@ -33,6 +33,10 @@ public final class DataLogStage implements TelemetryStage {
             case STRING -> logString(event);
             case STRUCT -> logStruct(event);
             case STRUCT_ARRAY -> logStructArray(event);
+            case BOOLEAN_ARRAY -> logBooleanArray(event);
+            case INTEGER_ARRAY -> logIntegerArray(event);
+            case DOUBLE_ARRAY -> logDoubleArray(event);
+            case FLOAT_ARRAY -> logFloatArray(event);
             default -> {
                 // ignore unsupported types here
             }
@@ -67,28 +71,28 @@ public final class DataLogStage implements TelemetryStage {
         }
     }
 
-     private void logBooleanArray(TelemetryEvent event, long timestampMicros) {
+    private void logBooleanArray(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof boolean[] boolArray) {
             USBFileLogger.logBooleanArray(event.channel(), boolArray, event.timestampUs());
         }
     }
 
-    private void logIntegerArray(TelemetryEvent event, long timestampMicros) {
+    private void logIntegerArray(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof long[] longArray) {
             USBFileLogger.logIntegerArray(event.channel(), longArray, event.timestampUs());
         }
     }
 
-    private void logDoubleArray(TelemetryEvent event, long timestampMicros) {
+    private void logDoubleArray(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof double[] doubleArray) {
             USBFileLogger.logDoubleArray(event.channel(), doubleArray, event.timestampUs());
         }
     }
 
-    private void logFloatArray(TelemetryEvent event, long timestampMicros) {
+    private void logFloatArray(TelemetryEvent event) {
         Object payload = event.payload();
         if (payload instanceof float[] floatArray) {
             USBFileLogger.logFloatArray(event.channel(), floatArray, event.timestampUs());

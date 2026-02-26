@@ -15,14 +15,23 @@
 package pi.logger.telemetry;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.units.measure.Time;
+import pi.logger.config.LoggerConfig;
 import pi.logger.csvparsers.Pose2dUtil;
-import pi.logger.datalog.USBFileLogger;
 import pi.logger.utils.TimeUtils;
 
 public final class CsvTelemetryStage implements TelemetryStage {
+
+    /**
+     * When {@code true}, the timestamp parsed from the CSV payload (parts[0]) is used
+     * as the WPILOG event timestamp.  When {@code false}, {@link TimeUtils#nowUs()} is
+     * used instead (the Pi's local receive time).  Controlled by
+     * {@code csv.usePayloadTimestamp} in {@code logger.properties}.
+     */
+    private static final boolean USE_PAYLOAD_TIMESTAMP =
+            LoggerConfig.getBoolean("csv.usePayloadTimestamp", true);
+
     @Override
-    public void apply(TelemetryContext context) 
+    public void apply(TelemetryContext context)
     {
         if (context.payloadType() != TelemetryPayloadType.CSV) {
             return;
@@ -31,6 +40,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
         if (payload == null) {
             return;
         }
+
         // Parse CSV format: timestamp,signalID,type,value,units
         String[] parts = payload.split(",", 5);
         if (parts.length < 4) {
@@ -40,68 +50,125 @@ public final class CsvTelemetryStage implements TelemetryStage {
 
         // Parse the CSV timestamp (parts[0]) as microseconds for the WPILOG file.
         // The robot sends a numeric timestamp; fall back to 0 if unparseable.
-        long timestampMicros = parseTimestampMicros(parts[0].trim());
+        long parsedTimestampMicros = TimeUtils.parseTimestampMicros(parts[0].trim());
+        long timestampMicros = USE_PAYLOAD_TIMESTAMP ? parsedTimestampMicros : TimeUtils.nowUs();
         String signalId = parts[1].trim();
         String type = parts[2].trim();
         String value = parts[3].trim();
         String units = parts.length > 4 ? parts[4].trim() : "";
+        String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
 
-        if ("bool_array".equalsIgnoreCase(type))
-        {
-            USBFileLogger.logBooleanArray(signalId, TelemetryArrayHelper.getBooleanArray(value), TimeUtils.nowUs());
+        TelemetryEvent original = context.getEvent();
+
+        TelemetryEvent outEvent = buildEvent(original, timestampMicros, entryName, type, value, units, signalId);
+        if (outEvent != null) {
+            TelemetryProcessor.publish(outEvent);
         }
-        else if ("int_array".equalsIgnoreCase(type))
-        {
-            USBFileLogger.logIntegerArray(signalId,TelemetryArrayHelper.getIntArray(value), TimeUtils.nowUs());
-        }
-        else if ("double_array".equalsIgnoreCase(type) )
-        {
-            if (signalId.toLowerCase().contains("pose2d")) {
-                Pose2d pose = Pose2dUtil.fromString(value);
-                String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
-                //System.out.println("Parsed Pose2d from CSV: " + signalId + " = " + pose);
-                TelemetryEvent original = context.getEvent();
-                TelemetryEvent poseEvent = new TelemetryEvent(
-                        original.timestampUs(),
-                        original.source(),
-                        TelemetryPayloadType.STRUCT,
-                        entryName,
-                        pose,
-                        Pose2d.struct
-                );
-                TelemetryProcessor.publish(poseEvent);
-            } else {
-                USBFileLogger.logDoubleArray(signalId,TelemetryArrayHelper.getDoubleArray(value), TimeUtils.nowUs());
-            }
-        }
-        else if ("float_array".equalsIgnoreCase(type))
-        {
-            USBFileLogger.logFloatArray(signalId,TelemetryArrayHelper.getFloatArray(value), TimeUtils.nowUs()); 
-        } else {
-            USBFileLogger.logCsvPayload(payload, context.getEvent().timestampUs());
-        }
-        
     }
+
     /**
-     * Parse the CSV timestamp string into microseconds for the WPILOG file.
-     * Accepts integer microseconds directly. If the value contains a decimal
-     * point it is treated as seconds and converted to microseconds.
-     * Returns 0 on any parse failure so logging still proceeds.
+     * Converts the parsed CSV fields into a typed {@link TelemetryEvent} that
+     * {@link DataLogStage} will write to the WPILOG file.  Returns {@code null}
+     * if the value cannot be parsed.
+     * <p>Package-private to allow direct testing without a running processor.</p>
      */
-    private static long parseTimestampMicros(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            return 0;
-        }
+    static TelemetryEvent buildEvent(
+            TelemetryEvent original,
+            long timestampMicros,
+            String entryName,
+            String type,
+            String value,
+            String units,
+            String signalId) {
+
         try {
-            if (raw.contains(".")) {
-                // Treat as seconds (e.g. FPGA timestamp from WPILib Timer.getFPGATimestamp())
-                double seconds = Double.parseDouble(raw);
-                return (long) (seconds * 1_000_000);
-            }
-            return Long.parseLong(raw);
+            return switch (type.toLowerCase()) {
+                case "double", "float" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.DOUBLE,
+                        entryName,
+                        Double.parseDouble(value),
+                        null);
+
+                case "int", "integer", "long" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.INTEGER,
+                        entryName,
+                        Long.parseLong(value),
+                        null);
+
+                case "bool", "boolean" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.BOOLEAN,
+                        entryName,
+                        Boolean.parseBoolean(value),
+                        null);
+
+                case "string" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.STRING,
+                        entryName,
+                        value,
+                        null);
+
+                case "bool_array" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.BOOLEAN_ARRAY,
+                        entryName,
+                        TelemetryArrayHelper.getBooleanArray(value),
+                        null);
+
+                case "int_array" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.INTEGER_ARRAY,
+                        entryName,
+                        TelemetryArrayHelper.getIntArray(value),
+                        null);
+
+                case "double_array" -> {
+                    if (signalId.toLowerCase().contains("pose2d")) {
+                        Pose2d pose = Pose2dUtil.fromString(value);
+                        yield new TelemetryEvent(
+                                original.timestampUs(),
+                                original.source(),
+                                TelemetryPayloadType.STRUCT,
+                                entryName,
+                                pose,
+                                Pose2d.struct);
+                    } else {
+                        yield new TelemetryEvent(
+                                timestampMicros,
+                                original.source(),
+                                TelemetryPayloadType.DOUBLE_ARRAY,
+                                entryName,
+                                TelemetryArrayHelper.getDoubleArray(value),
+                                null);
+                    }
+                }
+
+                case "float_array" -> new TelemetryEvent(
+                        timestampMicros,
+                        original.source(),
+                        TelemetryPayloadType.FLOAT_ARRAY,
+                        entryName,
+                        TelemetryArrayHelper.getFloatArray(value),
+                        null);
+
+                default -> {
+                    System.err.println("Unknown CSV type: " + type);
+                    yield null;
+                }
+            };
         } catch (NumberFormatException e) {
-            System.err.println("Failed to parse CSV timestamp: " + raw);
-            return 0;
+            System.err.println("Failed to parse CSV value for type " + type + ": " + value);
+            return null;
         }
     }
+
 }

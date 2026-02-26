@@ -66,11 +66,33 @@ dependencies {
 
     implementation group: "org.ejml", name: "ejml-simple", version: wpi.versions.ejmlVersion.get()
     implementation group: "us.hebi.quickbuf", name: "quickbuf-runtime", version: wpi.versions.quickbufVersion.get();
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.10.2"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.10.2"
 }
 
 jar {
     manifest {
         attributes 'Main-Class': 'pi.logger.PiLogger'
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    // Make WPILib native libraries (.dll/.so/.dylib) available to the test JVM.
+    // The AssembledResources layout is <os>/<arch>/shared, which doesn't match
+    // wpilibTools.currentPlatform.platformName, so we discover the shared dir at
+    // configuration time by finding any subdirectory named "shared".
+    dependsOn processResources
+    doFirst {
+        def sharedDirs = []
+        file("${buildDir}/NativeMain/AssembledResources").eachDirRecurse { dir ->
+            if (dir.name == "shared") sharedDirs << dir.absolutePath
+        }
+        if (!sharedDirs.isEmpty()) {
+            jvmArgs "-Djava.library.path=${sharedDirs.join(File.pathSeparator)}"
+        }
     }
 }
 
