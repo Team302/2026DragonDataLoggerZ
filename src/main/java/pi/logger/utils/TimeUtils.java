@@ -48,4 +48,27 @@ public final class TimeUtils {
     public static long nowUs() {
         return WPIUtilJNI.now() - epochOffsetUs;
     }
+
+    /**
+     * Parse the CSV timestamp string into microseconds for the WPILOG file.
+     * Accepts integer microseconds directly. If the value contains a decimal
+     * point it is treated as seconds and converted to microseconds.
+     * Returns 0 on any parse failure so logging still proceeds.
+     */
+    public static long parseTimestampMicros(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return 0;
+        }
+        try {
+            if (raw.contains(".")) {
+                // Treat as seconds (e.g. FPGA timestamp from WPILib Timer.getFPGATimestamp())
+                double seconds = Double.parseDouble(raw);
+                return (long) (seconds * 1_000_000);
+            }
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse CSV timestamp: " + raw);
+            return 0;
+        }
+    }
 }

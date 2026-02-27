@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import edu.wpi.first.math.geometry.Pose2d;
-import pi.logger.structs.ChassisSpeeds;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
@@ -220,61 +219,6 @@ public final class USBFileLogger {
             e.printStackTrace();
         } finally {
             closeQuietly();
-        }
-    }
-
-    public static void logCsvPayload(String payload, long timestampUs) {
-        if (payload == null || dataLog == null) {
-            return;
-        }
-
-        try {
-            
-            // Parse CSV format: timestamp,signalID,type,value,units
-            String[] parts = payload.split(",", 5);
-            if (parts.length < 4) {
-                System.err.println("Invalid message format: " + payload);
-                return;
-            }
-
-            String signalID = parts[1].trim();
-            String type = parts[2].trim();
-            String value = parts[3].trim();
-            String units = parts.length > 4 ? parts[4].trim() : "";
-
-            // Create entry key with units if present
-            String entryName = units.isEmpty() ? signalID : signalID + " (" + units + ")";
-
-            // Log based on type
-            switch (type.toLowerCase()) {
-                case "double", "float" -> {
-                    try {
-                        double doubleValue = Double.parseDouble(value);
-                        logDouble(entryName, doubleValue, timestampUs);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Failed to parse double: " + value);
-                    }
-                }
-                case "int", "integer", "long" -> {
-                    try {
-                        long intValue = Long.parseLong(value);
-                        logInteger(entryName, intValue, timestampUs);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Failed to parse integer: " + value);
-                    }
-                }
-                case "bool", "boolean" -> logBoolean(entryName, Boolean.parseBoolean(value), timestampUs);
-                case "string", "str" -> logString(entryName, value, timestampUs);
-                default -> {
-                    System.err.println("Unknown type '" + type + "' for entry '" + entryName + "'. Defaulting to string.");
-                    // Default to string for unknown types
-                    logString(entryName, value, timestampUs);
-                }
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error writing message: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
