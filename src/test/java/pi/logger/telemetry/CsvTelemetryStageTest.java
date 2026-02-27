@@ -157,9 +157,12 @@ class CsvTelemetryStageTest {
     // ---------------------------------------------------------------------------------
 
     @Test
-    void buildEvent_unknownType_returnsNull() {
-        assertNull(CsvTelemetryStage.buildEvent(
-                origin(), 0L, "X", "quaternion", "1,0,0,0", "", "X"));
+    void buildEvent_unknownType_fallsBackToString() {
+        TelemetryEvent result = CsvTelemetryStage.buildEvent(
+                origin(), 0L, "X", "quaternion", "1,0,0,0", "", "X");
+        assertNotNull(result);
+        assertEquals(TelemetryPayloadType.STRING, result.payloadType(), "payloadType");
+        assertEquals("1,0,0,0", result.payload(), "payload value");
     }
 
     @Test

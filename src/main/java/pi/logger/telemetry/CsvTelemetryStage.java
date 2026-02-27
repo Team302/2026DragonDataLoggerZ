@@ -49,9 +49,10 @@ public final class CsvTelemetryStage implements TelemetryStage {
         }
 
         // Parse the CSV timestamp (parts[0]) as microseconds for the WPILOG file.
-        // The robot sends a numeric timestamp; fall back to 0 if unparseable.
-        long parsedTimestampMicros = TimeUtils.parseTimestampMicros(parts[0].trim());
-        long timestampMicros = USE_PAYLOAD_TIMESTAMP ? parsedTimestampMicros : TimeUtils.nowUs();
+        // Only parse (and only emit parse-error logs) when the result will actually be used.
+        long timestampMicros = USE_PAYLOAD_TIMESTAMP
+                ? TimeUtils.parseTimestampMicros(parts[0].trim())
+                : TimeUtils.nowUs();
         String signalId = parts[1].trim();
         String type = parts[2].trim();
         String value = parts[3].trim();
