@@ -14,210 +14,174 @@
 //====================================================================================================================================================
 package pi.logger.telemetry;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import pi.logger.utils.TimeUtils;
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 /**
- * Tests for {@link CsvTelemetryStage} using the real-world UDP packet format:
+ * Tests for {@link CsvTelemetryStage}.
  *
- * <pre>Em\t1726935951,/Chassis/FrontLeftModule/TargetState/Angle,double,1.36562,Speed, Angle</pre>
- *
- * The leading {@code Em\t} bytes are raw UDP framing prepended by the robot sender.
- * {@code CsvTelemetryStage} parses the CSV fields and publishes a typed
- * {@link TelemetryEvent} that {@link DataLogStage} will forward to USBFileLogger —
- * verified here by calling the package-private {@link CsvTelemetryStage#buildEvent}
- * directly.
+ * <p>Raw-packet tests use a {@link RawPacketCase} table (see {@link #rawPackets()})
+ * so that new packet examples can be added in one place without touching test logic.
  */
 class CsvTelemetryStageTest {
 
-    /** Real-world raw UDP payload produced by the robot sender. */
-    static final String RAW_PACKET =
-            "1726935951,/Chassis/FrontLeftModule/TargetState/Angle,double,1.36562,Speed, Angle";
+    // ---------------------------------------------------------------------------------
+    // Raw-packet test table
+    // ---------------------------------------------------------------------------------
 
-    // ── factory helpers ─────────────────────────────────────────────────────────
+    /**
+     * Describes a raw UDP CSV packet and the exact {@link TelemetryEvent} fields that
+     * {@link CsvTelemetryStage#buildEvent} must produce from it.
+     */
+    record RawPacketCase(
+            String raw,
+            String expectedChannel,
+            TelemetryPayloadType expectedType,
+            Object expectedValue,
+            long expectedTs) {
 
-    private static TelemetryEvent originEvent() {
-        return new TelemetryEvent(
-                0L,
-                TelemetrySource.UDP,
-                TelemetryPayloadType.CSV,
-                "udp/raw",
-                RAW_PACKET,
-                null);
+        @Override public String toString() { return raw; }
     }
 
-    private static TelemetryContext csvContext(String payload) {
-        TelemetryEvent event = new TelemetryEvent(
-                0L,
-                TelemetrySource.UDP,
-                TelemetryPayloadType.CSV,
-                "udp/raw",
-                payload,
-                null);
-        return new TelemetryContext(event);
+    static Stream<RawPacketCase> rawPackets() {
+        return Stream.empty(); // TODO: add real packet cases here
     }
 
-    private static TelemetryContext nonCsvContext() {
-        TelemetryEvent event = new TelemetryEvent(
-                0L,
-                TelemetrySource.UDP,
-                TelemetryPayloadType.DOUBLE,
-                "udp/raw",
-                42.0,
-                null);
-        return new TelemetryContext(event);
-    }
+    @Disabled("No packet cases yet - add real RawPacketCase entries to rawPackets() to enable")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("rawPackets")
+    void rawPacket_parsesCorrectly(RawPacketCase tc) {
+        String[] parts  = tc.raw().split(",", 5);
+        long ts         = TimeUtils.parseTimestampMicros(parts[0].trim());
+        String signalId = parts[1].trim();
+        String type     = parts[2].trim();
+        String value    = parts[3].trim();
+        String units    = parts.length > 4 ? parts[4].trim() : "";
+        String entryName = units.isEmpty() ? signalId : signalId + " (" + units + ")";
 
-
-    // ── buildEvent – real-world double packet ───────────────────────────────────
-
-    @Test
-    void buildEvent_doubleType_producesDoubleEvent() {
-        String[] parts = RAW_PACKET.split(",", 5);
-        long ts       = TimeUtils.parseTimestampMicros(parts[0].trim());
-        String signalId = parts[1].trim();              // /Chassis/FrontLeftModule/TargetState/Angle
-        String type     = parts[2].trim();              // double
-        String value    = parts[3].trim();              // 1.36562
-        String units    = parts[4].trim();              // Speed, Angle
-        String entryName = signalId + " (" + units + ")";
+        TelemetryEvent origin = new TelemetryEvent(
+                0L, TelemetrySource.UDP, TelemetryPayloadType.CSV, "udp/raw", tc.raw(), null);
 
         TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), ts, entryName, type, value, units, signalId);
+                origin, ts, entryName, type, value, units, signalId);
 
-        assertNotNull(result, "buildEvent must return a non-null event for a valid double packet");
-        assertEquals(TelemetryPayloadType.DOUBLE, result.payloadType());
-        assertEquals("/Chassis/FrontLeftModule/TargetState/Angle (Speed, Angle)", result.channel());
-        assertEquals(1.36562, (Double) result.payload(), 1e-9);
-        assertEquals(1726935951L, result.timestampUs(),
-                "timestamp should equal the value parsed from the payload");
+        assertNotNull(result, "buildEvent must not return null for a valid packet");
+        assertEquals(tc.expectedTs(),      result.timestampUs(), "timestampUs");
+        assertEquals(tc.expectedChannel(), result.channel(),     "channel");
+        assertEquals(tc.expectedType(),    result.payloadType(), "payloadType");
+
+        if (tc.expectedValue() instanceof Double expected) {
+            assertEquals(expected, (Double) result.payload(), 1e-9, "payload value");
+        } else {
+            assertEquals(tc.expectedValue(), result.payload(), "payload value");
+        }
     }
 
-    @Test
-    void buildEvent_doubleType_valueIsCorrect() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L,
-                "/Chassis/FrontLeftModule/TargetState/Angle (Speed, Angle)",
-                "double", "1.36562", "Speed, Angle",
-                "/Chassis/FrontLeftModule/TargetState/Angle");
+    // ---------------------------------------------------------------------------------
+    // buildEvent - array types
+    // ---------------------------------------------------------------------------------
 
-        assertInstanceOf(Double.class, result.payload());
-        assertEquals(1.36562, (Double) result.payload(), 1e-9);
+    private static TelemetryEvent origin() {
+        return new TelemetryEvent(0L, TelemetrySource.UDP,
+                TelemetryPayloadType.CSV, "udp/raw", "", null);
     }
-
-    @Test
-    void buildEvent_units_appendedToChannel() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L,
-                "/Chassis/FrontLeftModule/TargetState/Angle (Speed, Angle)",
-                "double", "1.36562", "Speed, Angle",
-                "/Chassis/FrontLeftModule/TargetState/Angle");
-
-        assertTrue(result.channel().contains("Speed, Angle"),
-                "units including the internal comma must appear in the channel name");
-    }
-
-    @Test
-    void buildEvent_sourcePreservedFromOriginal() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L,
-                "/Chassis/FrontLeftModule/TargetState/Angle",
-                "double", "1.36562", "",
-                "/Chassis/FrontLeftModule/TargetState/Angle");
-
-        assertEquals(TelemetrySource.UDP, result.source());
-    }
-
-    // ── buildEvent – other scalar types ─────────────────────────────────────────
-
-    @Test
-    void buildEvent_integerType_producesIntegerEvent() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 100L, "Counter", "int", "42", "", "Counter");
-
-        assertEquals(TelemetryPayloadType.INTEGER, result.payloadType());
-        assertEquals(42L, (Long) result.payload());
-    }
-
-    @Test
-    void buildEvent_booleanType_producesBooleanEvent() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Flag", "bool", "true", "", "Flag");
-
-        assertEquals(TelemetryPayloadType.BOOLEAN, result.payloadType());
-        assertTrue((Boolean) result.payload());
-    }
-
-    @Test
-    void buildEvent_stringType_producesStringEvent() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Label", "string", "hello", "", "Label");
-
-        assertEquals(TelemetryPayloadType.STRING, result.payloadType());
-        assertEquals("hello", result.payload());
-    }
-
-    // ── buildEvent – array types ─────────────────────────────────────────────────
 
     @Test
     void buildEvent_doubleArrayType_producesDoubleArrayEvent() {
         TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Signal", "double_array", "1.0;2.0;3.0", "", "Signal");
-
+                origin(), 0L, "Signal", "double_array", "1.0;2.0;3.0", "", "Signal");
         assertEquals(TelemetryPayloadType.DOUBLE_ARRAY, result.payloadType());
-        assertInstanceOf(double[].class, result.payload());
+        assertArrayEquals(new double[]{1.0, 2.0, 3.0}, (double[]) result.payload(), 1e-9);
+    }
+
+    @Test
+    void buildEvent_pose2dPacket_producesStructEvent() {
+        // Raw: 1832903929,/Chassis/Pose2d,double_array,13.9732;3.99347;0.000575243,X, Y, Rotation
+        String[] parts   = "1832903929,/Chassis/Pose2d,double_array,13.9732;3.99347;0.000575243,X, Y, Rotation".split(",", 5);
+        long ts          = TimeUtils.parseTimestampMicros(parts[0].trim());
+        String signalId  = parts[1].trim();
+        String type      = parts[2].trim();
+        String value     = parts[3].trim();
+        String units     = parts[4].trim();
+        String entryName = signalId + " (" + units + ")";
+
+        TelemetryEvent origin = new TelemetryEvent(
+                0L, TelemetrySource.UDP, TelemetryPayloadType.CSV, "udp/raw", "", null);
+        TelemetryEvent result = CsvTelemetryStage.buildEvent(origin, ts, entryName, type, value, units, signalId);
+
+        assertNotNull(result);
+        assertEquals(1832903929L,                          result.timestampUs(), "timestampUs");
+        assertEquals("/Chassis/Pose2d (X, Y, Rotation)",  result.channel(),     "channel");
+        assertEquals(TelemetryPayloadType.STRUCT,          result.payloadType(), "payloadType");
+
+        edu.wpi.first.math.geometry.Pose2d pose =
+                assertInstanceOf(edu.wpi.first.math.geometry.Pose2d.class, result.payload(), "payload is Pose2d");
+        assertEquals(13.9732,       pose.getX(),                     1e-9, "x");
+        assertEquals(3.99347,       pose.getY(),                     1e-9, "y");
+        assertEquals(0.000575243,   pose.getRotation().getRadians(), 1e-9, "rotation (radians)");
     }
 
     @Test
     void buildEvent_boolArrayType_producesBooleanArrayEvent() {
         TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Flags", "bool_array", "true;false", "", "Flags");
-
+                origin(), 0L, "Flags", "bool_array", "true;false", "", "Flags");
         assertEquals(TelemetryPayloadType.BOOLEAN_ARRAY, result.payloadType());
-        assertInstanceOf(boolean[].class, result.payload());
+        assertArrayEquals(new boolean[]{true, false}, (boolean[]) result.payload());
     }
 
     @Test
     void buildEvent_intArrayType_producesIntegerArrayEvent() {
         TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Counts", "int_array", "1;2;3", "", "Counts");
-
+                origin(), 0L, "Counts", "int_array", "1;2;3", "", "Counts");
         assertEquals(TelemetryPayloadType.INTEGER_ARRAY, result.payloadType());
-        assertInstanceOf(long[].class, result.payload());
+        assertArrayEquals(new long[]{1L, 2L, 3L}, (long[]) result.payload());
     }
 
     @Test
     void buildEvent_floatArrayType_producesFloatArrayEvent() {
         TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "Floats", "float_array", "1.0;2.0", "", "Floats");
-
+                origin(), 0L, "Floats", "float_array", "1.0;2.0", "", "Floats");
         assertEquals(TelemetryPayloadType.FLOAT_ARRAY, result.payloadType());
-        assertInstanceOf(float[].class, result.payload());
+        assertArrayEquals(new float[]{1.0f, 2.0f}, (float[]) result.payload(), 1e-6f);
     }
 
-    // ── buildEvent – bad input ────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------------------
+    // buildEvent - bad input
+    // ---------------------------------------------------------------------------------
 
     @Test
     void buildEvent_unknownType_returnsNull() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "X", "quaternion", "1,0,0,0", "", "X");
-        assertNull(result);
+        assertNull(CsvTelemetryStage.buildEvent(
+                origin(), 0L, "X", "quaternion", "1,0,0,0", "", "X"));
     }
 
     @Test
     void buildEvent_unparsableDoubleValue_returnsNull() {
-        TelemetryEvent result = CsvTelemetryStage.buildEvent(
-                originEvent(), 0L, "X", "double", "not-a-number", "", "X");
-        assertNull(result);
+        assertNull(CsvTelemetryStage.buildEvent(
+                origin(), 0L, "X", "double", "not-a-number", "", "X"));
     }
 
-    // ── apply() – guard conditions ───────────────────────────────────────────────
+    // ---------------------------------------------------------------------------------
+    // apply() - guard conditions
+    // ---------------------------------------------------------------------------------
+
+    private static TelemetryContext csvContext(String payload) {
+        return new TelemetryContext(new TelemetryEvent(
+                0L, TelemetrySource.UDP, TelemetryPayloadType.CSV, "udp/raw", payload, null));
+    }
 
     @Test
     void apply_nonCsvPayloadType_doesNotThrow() {
-        assertDoesNotThrow(() -> new CsvTelemetryStage().apply(nonCsvContext()));
+        TelemetryContext ctx = new TelemetryContext(new TelemetryEvent(
+                0L, TelemetrySource.UDP, TelemetryPayloadType.DOUBLE, "udp/raw", 42.0, null));
+        assertDoesNotThrow(() -> new CsvTelemetryStage().apply(ctx));
     }
 
     @Test

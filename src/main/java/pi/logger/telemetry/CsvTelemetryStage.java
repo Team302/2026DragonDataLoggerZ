@@ -135,7 +135,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
                     if (signalId.toLowerCase().contains("pose2d")) {
                         Pose2d pose = Pose2dUtil.fromString(value);
                         yield new TelemetryEvent(
-                                original.timestampUs(),
+                                timestampMicros,
                                 original.source(),
                                 TelemetryPayloadType.STRUCT,
                                 entryName,
