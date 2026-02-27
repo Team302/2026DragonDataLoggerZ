@@ -49,7 +49,7 @@ public final class TimeUtils {
         return WPIUtilJNI.now() - epochOffsetUs;
     }
 
-        /**
+    /**
      * Parse the CSV timestamp string into microseconds for the WPILOG file.
      * Accepts integer microseconds directly. If the value contains a decimal
      * point it is treated as seconds and converted to microseconds.
