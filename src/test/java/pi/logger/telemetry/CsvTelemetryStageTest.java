@@ -67,6 +67,16 @@ class CsvTelemetryStageTest {
                 TelemetryPayloadType.BOOLEAN, false, 1832903929L),
 
             new RawPacketCase(
+                "1832903929,/RoboRio/IsBrownOut,bool,true,bool",
+                "/RoboRio/IsBrownOut (bool)",
+                TelemetryPayloadType.BOOLEAN, true, 1832903929L),
+
+            new RawPacketCase(
+                "1832903929,/RoboRio/IsBrownOut,bool,1,bool",
+                "/RoboRio/IsBrownOut (bool)",
+                TelemetryPayloadType.BOOLEAN, true, 1832903929L),
+
+            new RawPacketCase(
                 "1832903929,/RoboRio/CPUTemp,double,45,Degrees C",
                 "/RoboRio/CPUTemp (Degrees C)",
                 TelemetryPayloadType.DOUBLE, 45.0, 1832903929L),
