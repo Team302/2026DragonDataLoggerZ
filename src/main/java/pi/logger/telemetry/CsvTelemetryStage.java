@@ -105,7 +105,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
                         original.source(),
                         TelemetryPayloadType.BOOLEAN,
                         entryName,
-                        Boolean.parseBoolean(value),
+                        Boolean.parseBoolean(value) || "1".equals(value.trim()),
                         null);
 
                 case "string" -> new TelemetryEvent(

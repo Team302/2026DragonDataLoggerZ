@@ -25,7 +25,7 @@ public final class TelemetryArrayHelper {
         String[] parts = payloadString.split(";");
         boolean[] boolArray = new boolean[parts.length];
         for (int i = 0; i < parts.length; i++) {
-            boolArray[i] = Boolean.parseBoolean(parts[i]);
+            boolArray[i] = Boolean.parseBoolean(parts[i]) || "1".equals(parts[i].trim());
         }
         return boolArray;
     }
