@@ -67,6 +67,10 @@ dependencies {
     implementation group: "org.ejml", name: "ejml-simple", version: wpi.versions.ejmlVersion.get()
     implementation group: "us.hebi.quickbuf", name: "quickbuf-runtime", version: wpi.versions.quickbufVersion.get();
 
+    // Logging: SLF4J API + Logback implementation
+    implementation "org.slf4j:slf4j-api:2.0.13"
+    implementation "ch.qos.logback:logback-classic:1.5.6"
+
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.10.2"
     testImplementation "org.junit.jupiter:junit-jupiter-params:5.10.2"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.10.2"
@@ -157,7 +161,7 @@ task shadowJarArm64(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
 
 task scpJar(type: Exec) {
     def user = 'frc302'
-    def host = 'dragondataloggerz.local'
+    def host = 'pi-logger.local'
     def login = "${user}@${host}"
     def key = project.file('keys/id_ed25519').absolutePath
     def jar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
@@ -166,7 +170,7 @@ task scpJar(type: Exec) {
 
 task scpScript(type: Exec) {
     def user = 'frc302'
-    def host = 'dragondataloggerz.local'
+    def host = 'pi-logger.local'
     def login = "${user}@${host}"
     def key = project.file('keys/id_ed25519').absolutePath
     def script = project.file('deploy/pi-logger/home/frc302/deploy-pi.sh').absolutePath
@@ -175,7 +179,7 @@ task scpScript(type: Exec) {
 
 task runDeployScript(type: Exec) {
     def user = 'frc302'
-    def host = 'dragondataloggerz.local'
+    def host = 'pi-logger.local'
     def login = "${user}@${host}"
     def key = project.file('keys/id_ed25519').absolutePath
     commandLine 'ssh', '-i', key, login, 'chmod +x /home/frc302/deploy-pi.sh && /home/frc302/deploy-pi.sh'
@@ -194,7 +198,7 @@ task deployPi {
 task setupPiSSHKey {
     doLast {
         def user = 'frc302'
-        def host = 'dragondataloggerz.local'
+        def host = 'pi-logger.local'
         def login = "${user}@${host}"
         def authFile = project.file('deploy/pi-logger/home/frc302/.ssh/authorized_keys').absolutePath
 
@@ -215,7 +219,7 @@ task setupPiSSHKey {
 task setupPi {
     doLast {
         def user = 'frc302'
-        def host = 'dragondataloggerz.local'
+        def host = 'pi-logger.local'
         def login = "${user}@${host}"
         def key = project.file('keys/id_ed25519').absolutePath
         def markerCheckFile = '__pi_marker_check.txt'
@@ -256,9 +260,9 @@ task setupPi {
             throw new GradleException("Failed to copy setup-pi.sh to ${host}. Aborting.")
         }
 
-        // Run setup script remotely
+        // Run setup script remotely (sed strips any stray \r in case of CRLF line endings)
         def result3 = exec {
-            commandLine 'ssh', '-i', key, login, 'chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh'
+            commandLine 'ssh', '-i', key, login, "sed -i 's/\\r//' /home/frc302/setup-pi.sh && chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh"
             ignoreExitValue = true
         }
         if (result3.exitValue != 0) {

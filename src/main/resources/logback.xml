@@ -1,0 +1,63 @@
+<configuration>
+
+    <!--
+        Console appender — systemd journal picks this up via StandardOutput=journal.
+        Pattern: timestamp  [thread]  LEVEL  logger-short-name - message
+    -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--
+        Per-package / per-class level overrides.
+
+        Levels (most → least verbose): TRACE  DEBUG  INFO  WARN  ERROR
+
+        MatchInfoListener:
+          DEBUG  — individual NT key changes (MatchInfoListener: Enabled = true, etc.)
+          INFO   — startup summary, robot state transitions ("Robot state = Teleoperated")
+
+        OculusVideoRecorder:
+          DEBUG  — ffmpeg launch details, ffmpeg log path
+          INFO   — recording start/stop, watching message, status lines
+
+        UdpReceiver / TelemetryProcessor / CsvTelemetryStage:
+          WARN   — only errors and warnings (high-frequency path — avoid INFO noise)
+
+        USBFileLogger:
+          INFO   — file open/rotate/close messages
+          DEBUG  — flush stats
+
+        PiLogger (root startup):
+          DEBUG  — native library load paths
+          INFO   — "Pi logger starting/running"
+
+        To silence MatchInfoListener NT key chatter in production, change its level to INFO.
+        To re-enable it for debugging, change it back to DEBUG.
+    -->
+
+    <!-- NT key-change chatter: set to INFO to silence in production -->
+    <logger name="pi.logger.nt.MatchInfoListener" level="DEBUG" />
+
+    <!-- Oculus recording: DEBUG shows ffmpeg details -->
+    <logger name="pi.logger.nt.OculusVideoRecorder" level="DEBUG" />
+
+    <!-- High-frequency telemetry path: WARN to avoid flooding the journal -->
+    <logger name="pi.logger.udp.UdpReceiver"            level="WARN" />
+    <logger name="pi.logger.telemetry.TelemetryProcessor" level="WARN" />
+    <logger name="pi.logger.telemetry.CsvTelemetryStage"  level="WARN" />
+
+    <!-- USB file logger -->
+    <logger name="pi.logger.datalog.USBFileLogger" level="INFO" />
+
+    <!-- Utilities -->
+    <logger name="pi.logger.utils.TimeUtils" level="WARN" />
+
+    <!-- Root: catch everything else at INFO -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
