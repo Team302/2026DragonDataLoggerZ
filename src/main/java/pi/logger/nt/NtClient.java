@@ -16,8 +16,12 @@ package pi.logger.nt;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import pi.logger.config.LoggerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class NtClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NtClient.class);
 
     private static final NetworkTableInstance inst =
             NetworkTableInstance.getDefault();
@@ -34,19 +38,19 @@ public final class NtClient {
         String resolvedServer = resolveServer();
         if (resolvedServer != null) {
             inst.setServer(resolvedServer);
-            System.out.println("NT client started, server=" + resolvedServer);
+            LOG.info("NT client started, server={}", resolvedServer);
             return;
         }
 
         int teamNumber = resolveTeamNumber();
         if (teamNumber > 0) {
             inst.setServerTeam(teamNumber);
-            System.out.println("NT client started, team=" + teamNumber);
+            LOG.info("NT client started, team={}", teamNumber);
             return;
         }
 
         inst.setServer(FALLBACK_SERVER);
-        System.out.println("NT client started, fallback server=" + FALLBACK_SERVER);
+        LOG.info("NT client started, fallback server={}", FALLBACK_SERVER);
     }
 
     public static NetworkTableInstance get() {

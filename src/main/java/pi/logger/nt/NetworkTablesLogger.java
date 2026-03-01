@@ -34,8 +34,12 @@ import pi.logger.telemetry.TelemetryPayloadType;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.telemetry.TelemetrySource;
 import pi.logger.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class NetworkTablesLogger {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NetworkTablesLogger.class);
     
     private static volatile boolean running = true;
     private static final int SWERVE_MODULE_COUNT = 4;
@@ -92,7 +96,7 @@ public final class NetworkTablesLogger {
                 .getStructArrayTopic("ModuleTargets", SwerveModuleState.struct)
                 .subscribe(createDefaultModuleStates());
 
-            System.out.println("NetworkTables logger started");
+            LOG.info("NetworkTables logger started");
 
             while (running) {
                 dumpTopicsPeriodically(inst);
@@ -114,8 +118,7 @@ public final class NetworkTablesLogger {
             }
 
         } catch (Exception e) {
-            System.err.println("NetworkTables logger error");
-            e.printStackTrace();
+            LOG.error("NetworkTables logger error", e);
         } finally {
             closeSubs();
         }
@@ -131,7 +134,7 @@ public final class NetworkTablesLogger {
             
             }
         } catch (Exception e) {
-            System.err.println("Error logging Pose2D: " + e.getMessage());
+            LOG.error("Error logging Pose2D: {}", e.getMessage());
         }
     }
 
@@ -142,7 +145,7 @@ public final class NetworkTablesLogger {
                 publishStruct("DriveState/ChassisSpeeds", speeds, ChassisSpeeds.struct);
             }
         } catch (Exception e) {
-            System.err.println("Error logging ChassisSpeeds: " + e.getMessage());
+            LOG.error("Error logging ChassisSpeeds: {}", e.getMessage());
         }
     }
 
@@ -153,7 +156,7 @@ public final class NetworkTablesLogger {
                 publishStructArray("DriveState/ModulePositions", positions, SwerveModulePosition.struct);
             }
         } catch (Exception e) {
-            System.err.println("Error logging ModulePositions: " + e.getMessage());
+            LOG.error("Error logging ModulePositions: {}", e.getMessage());
         }
     }
 
@@ -165,7 +168,7 @@ public final class NetworkTablesLogger {
                 publishScalar(TelemetryPayloadType.DOUBLE, "DriveState/OdometryFrequency", freq);
             }
         } catch (Exception e) {
-            System.err.println("Error logging OdometryFrequency: " + e.getMessage());
+            LOG.error("Error logging OdometryFrequency: {}", e.getMessage());
         }
     }
 
@@ -176,7 +179,7 @@ public final class NetworkTablesLogger {
                 publishStructArray("DriveState/ModuleStates", states, SwerveModuleState.struct);
             }
         } catch (Exception e) {
-            System.err.println("Error logging ModuleStates: " + e.getMessage());
+            LOG.error("Error logging ModuleStates: {}", e.getMessage());
         }
     }
 
@@ -187,7 +190,7 @@ public final class NetworkTablesLogger {
                 publishStructArray("DriveState/ModuleTargets", targets, SwerveModuleState.struct);
             }
         } catch (Exception e) {
-            System.err.println("Error logging ModuleTargets: " + e.getMessage());
+            LOG.error("Error logging ModuleTargets: {}", e.getMessage());
         }
     }
 
@@ -233,17 +236,17 @@ public final class NetworkTablesLogger {
             for (TopicInfo info : infos) {
                 infoByName.put(info.name, info);
             }
-            System.out.println("---- NetworkTables Topics (" + topics.length + ") ----");
+            LOG.info("---- NetworkTables Topics ({}) ----", topics.length);
             for (Topic topic : topics) {
                 TopicInfo info = infoByName.get(topic.getName());
         String typeLabel = (info != null && info.typeStr != null && !info.typeStr.isBlank())
             ? info.typeStr
             : topic.getType().toString();
-                System.out.printf("%s (type=%s)%n", topic.getName(), typeLabel);
+                LOG.info("  {} (type={})", topic.getName(), typeLabel);
             }
-            System.out.println("---- End NetworkTables Topics ----");
+            LOG.info("---- End NetworkTables Topics ----");
         } catch (Exception e) {
-            System.err.println("Failed to enumerate NetworkTables topics: " + e.getMessage());
+            LOG.error("Failed to enumerate NetworkTables topics: {}", e.getMessage());
         }
     }
 

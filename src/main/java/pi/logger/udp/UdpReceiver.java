@@ -26,8 +26,12 @@ import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.telemetry.TelemetrySource;
 import pi.logger.config.LoggerConfig;
 import pi.logger.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class UdpReceiver {
+
+    private static final Logger LOG = LoggerFactory.getLogger(UdpReceiver.class);
 
     private static final int DEFAULT_PORT = 5900;
     private static final int PORT = LoggerConfig.getInt("udp.listenPort", DEFAULT_PORT, 1, 65535);
@@ -76,7 +80,7 @@ public final class UdpReceiver {
             s.bind(new InetSocketAddress(PORT));
             s.setReceiveBufferSize(1 << 20); // 1 MB buffer
 
-            System.out.println("UDP receiver listening on port " + PORT);
+            LOG.info("UDP receiver listening on port {}", PORT);
 
             byte[] buffer = new byte[MAX_PACKET_SIZE];
 
@@ -114,12 +118,10 @@ public final class UdpReceiver {
         } catch (SocketException e) {
             // Expected when socket is closed by stop()
             if (running) {
-                System.err.println("UDP receiver socket error");
-                e.printStackTrace();
+                LOG.error("UDP receiver socket error", e);
             }
         } catch (Exception e) {
-            System.err.println("UDP receiver error");
-            e.printStackTrace();
+            LOG.error("UDP receiver error", e);
         } finally {
             try {
                 if (s != null) {

@@ -15,6 +15,8 @@
 package pi.logger.utils;
 
 import edu.wpi.first.util.WPIUtilJNI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides timestamps in microseconds relative to when {@link #initialize()} was first called,
@@ -25,6 +27,8 @@ import edu.wpi.first.util.WPIUtilJNI;
  * begins near zero, which AdvantageScope expects for its timeline display.
  */
 public final class TimeUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TimeUtils.class);
 
     /** Epoch offset captured once at {@link #initialize()} time. */
     private static volatile long epochOffsetUs = 0;
@@ -67,7 +71,7 @@ public final class TimeUtils {
             }
             return Long.parseLong(raw);
         } catch (NumberFormatException e) {
-            System.err.println("Failed to parse CSV timestamp: " + raw);
+            LOG.warn("Failed to parse CSV timestamp: {}", raw);
             return 0;
         }
     }

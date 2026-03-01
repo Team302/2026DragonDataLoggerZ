@@ -22,8 +22,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import pi.logger.config.LoggerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TelemetryProcessor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TelemetryProcessor.class);
 
     private static final int DEFAULT_QUEUE_CAPACITY = 20_000;
     private static final int QUEUE_CAPACITY = LoggerConfig.getInt(
@@ -71,8 +75,7 @@ public final class TelemetryProcessor {
         if (!inputQueue.offer(event)) {
             long drops = droppedCount.incrementAndGet();
             if (drops == 1 || drops % 1000 == 0) {
-                System.err.println(
-                        "[TelemetryProcessor] Dropped " + drops + " events; queue at capacity (" + inputQueue.size() + ")");
+                LOG.warn("Dropped {} events; queue at capacity ({})", drops, inputQueue.size());
             }
         }
     }
@@ -109,8 +112,7 @@ public final class TelemetryProcessor {
                         stage.apply(context);
                     } catch (Exception e) {
                         errorCount.incrementAndGet();
-                        System.err.println("Telemetry stage failed for channel " + event.channel());
-                        e.printStackTrace();
+                        LOG.error("Telemetry stage failed for channel {}", event.channel(), e);
                     }
                 }
                 receivedCount.incrementAndGet();
