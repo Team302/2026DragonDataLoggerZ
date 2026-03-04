@@ -2,7 +2,7 @@
 setlocal
 
 set USER=frc302
-set HOST=dragondataloggerz.local
+set HOST=pi-logger.local
 set LOGIN=%USER%@%HOST%
 set KEY=./keys/id_ed25519
 

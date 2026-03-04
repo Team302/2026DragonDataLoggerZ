@@ -155,46 +155,34 @@ task shadowJarArm64(type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
     })
 }
 
+def piUser = 'frc302'
+def piHost = 'pi-logger.local'
+def piLogin = "${piUser}@${piHost}"
+def piKey = project.file('keys/id_ed25519').absolutePath
+def piJar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
+
 task scpJar(type: Exec) {
-    def user = 'frc302'
-    def host = 'dragondataloggerz.local'
-    def login = "${user}@${host}"
-    def key = project.file('keys/id_ed25519').absolutePath
-    def jar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
-    commandLine 'scp', '-i', key, jar, "${login}:/tmp/PiLogger-linuxarm64-cross.jar"
+    commandLine 'scp', '-i', piKey, piJar, "${piLogin}:/tmp/PiLogger-linuxarm64-cross.jar"
 }
 
-task scpScript(type: Exec) {
-    def user = 'frc302'
-    def host = 'dragondataloggerz.local'
-    def login = "${user}@${host}"
-    def key = project.file('keys/id_ed25519').absolutePath
-    def script = project.file('deploy/pi-logger/home/frc302/deploy-pi.sh').absolutePath
-    commandLine 'scp', '-i', key, script, "${login}:/home/frc302/deploy-pi.sh"
+task runUpdateScript(type: Exec) {
+    commandLine 'ssh', '-i', piKey, piLogin,
+        'sudo /home/frc302/scripts/05-update-pilogger.sh'
 }
 
-task runDeployScript(type: Exec) {
-    def user = 'frc302'
-    def host = 'dragondataloggerz.local'
-    def login = "${user}@${host}"
-    def key = project.file('keys/id_ed25519').absolutePath
-    commandLine 'ssh', '-i', key, login, 'chmod +x /home/frc302/deploy-pi.sh && /home/frc302/deploy-pi.sh'
-}
-
-scpScript.mustRunAfter scpJar
-runDeployScript.mustRunAfter scpScript
+runUpdateScript.mustRunAfter scpJar
 
 task deployPi {
-    dependsOn scpJar, scpScript, runDeployScript
+    dependsOn scpJar, runUpdateScript
     group = 'Deployment'
-    description = 'Deploys PiLogger and runs deploy script on the Pi'
+    description = 'Deploys updated PiLogger jar and restarts service on the Pi'
 }
 
 // Setup Pi SSH key task: creates .ssh directory, copies authorized_keys, sets permissions
 task setupPiSSHKey {
     doLast {
         def user = 'frc302'
-        def host = 'dragondataloggerz.local'
+        def host = 'pi-logger.local'
         def login = "${user}@${host}"
         def authFile = project.file('deploy/pi-logger/home/frc302/.ssh/authorized_keys').absolutePath
 
@@ -215,19 +203,18 @@ task setupPiSSHKey {
 task setupPi {
     doLast {
         def user = 'frc302'
-        def host = 'dragondataloggerz.local'
+        def host = 'pi-logger.local'
         def login = "${user}@${host}"
         def key = project.file('keys/id_ed25519').absolutePath
-        def markerCheckFile = '__pi_marker_check.txt'
-        def piloggerService = project.file('deploy/pi-logger/etc/systemd/system/pilogger.service').absolutePath
-        def setupScript = project.file('deploy/pi-logger/home/frc302/setup-pi.sh').absolutePath
+        def scriptsDir = project.file('deploy/pi-logger/scripts').absolutePath
+        def deployScript = project.file('deploy/pi-logger/deploy-pi.sh').absolutePath
+        def jar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
 
-        // Check marker file only; skip setup if present
+        // Check marker file; skip setup if already done
         def markerCheck = exec {
             commandLine 'ssh', '-i', key, login, 'test -f /home/frc302/this_pi_has_been_setup'
             ignoreExitValue = true
         }
-
         if (markerCheck.exitValue == 0) {
             println "${host} already setup; aborting."
             return
@@ -238,31 +225,40 @@ task setupPi {
 
         println "Setting up ${host}..."
 
-        // Copy service file
+        // Copy deploy script
         def result1 = exec {
-            commandLine 'scp', '-i', key, piloggerService, "${login}:/tmp/pilogger.service"
+            commandLine 'scp', '-i', key, deployScript, "${login}:/home/frc302/deploy-pi.sh"
             ignoreExitValue = true
         }
         if (result1.exitValue != 0) {
-            throw new GradleException("Failed to copy pilogger.service to ${host}. Aborting.")
+            throw new GradleException("Failed to copy deploy-pi.sh to ${host}. Aborting.")
         }
 
-        // Copy setup script
+        // Copy scripts directory
         def result2 = exec {
-            commandLine 'scp', '-i', key, setupScript, "${login}:/home/frc302/setup-pi.sh"
+            commandLine 'scp', '-i', key, '-r', scriptsDir, "${login}:/home/frc302/scripts"
             ignoreExitValue = true
         }
         if (result2.exitValue != 0) {
-            throw new GradleException("Failed to copy setup-pi.sh to ${host}. Aborting.")
+            throw new GradleException("Failed to copy scripts/ to ${host}. Aborting.")
         }
 
-        // Run setup script remotely
+        // Copy jar to /tmp for 05-update-pilogger.sh
         def result3 = exec {
-            commandLine 'ssh', '-i', key, login, 'chmod 755 /home/frc302/setup-pi.sh && sudo /home/frc302/setup-pi.sh'
+            commandLine 'scp', '-i', key, jar, "${login}:/tmp/PiLogger-linuxarm64-cross.jar"
             ignoreExitValue = true
         }
         if (result3.exitValue != 0) {
-            throw new GradleException("Remote setup script failed with error ${result3.exitValue}.")
+            throw new GradleException("Failed to copy jar to ${host}. Aborting.")
+        }
+
+        // Run deploy script
+        def result4 = exec {
+            commandLine 'ssh', '-i', key, login, 'chmod +x /home/frc302/deploy-pi.sh /home/frc302/scripts/*.sh && sudo /home/frc302/deploy-pi.sh'
+            ignoreExitValue = true
+        }
+        if (result4.exitValue != 0) {
+            throw new GradleException("Remote deploy script failed with error ${result4.exitValue}.")
         }
 
         println "${host} setup complete."

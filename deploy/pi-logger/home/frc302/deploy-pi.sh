@@ -1,5 +1,9 @@
 #!/bin/bash
-sudo systemctl stop pilogger.service
-sudo install -m 644 /tmp/PiLogger-linuxarm64-cross.jar /home/frc302/PiLogger-linuxarm64-cross.jar
-sudo systemctl start pilogger.service
-sudo systemctl status pilogger.service
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "=== Pi Deploy Starting ==="
+
+bash "$SCRIPT_DIR/scripts/01-packages.sh"
+echo "=== Pi Deploy Complete ==="
