@@ -1,20 +1,14 @@
 #!/bin/bash
-# package install 
-sudo apt-get update 
-sudo apt-get upgrade -y
-sudo apt-get install -y openjdk-21-jdk tcpdump ffmpeg
 
-# usb stick setup
-sudo mkdir -p /mnt/usb_logs 
-sudo chown frc302:frc302 /mnt/usb_logs 
-echo 'LABEL=ROBOT_LOGS /mnt/usb_logs vfat defaults,nofail,noatime,uid=1000,gid=1000,umask=0022 0 0' | sudo tee -a /etc/fstab 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# pilogger service setup
-sudo cp /tmp/pilogger.service /etc/systemd/system/pilogger.service
-sudo chown root:root /etc/systemd/system/pilogger.service
-sudo chmod 644 /etc/systemd/system/pilogger.service
-sudo systemctl daemon-reload 
-sudo systemctl enable pilogger.service 
+echo "=== Pi Deploy Starting ==="
+
+bash "$SCRIPT_DIR/scripts/01-packages.sh"
+bash "$SCRIPT_DIR/scripts/02-usb-setup.sh"
+bash "$SCRIPT_DIR/scripts/03-ntp-setup.sh"
+bash "$SCRIPT_DIR/scripts/04-pilogger-service.sh"
+bash "$SCRIPT_DIR/scripts/05-update-pilogger.sh"
 
 touch /home/frc302/this_pi_has_been_setup
-echo "Pi setup complete."
+echo "=== Pi Deploy Complete ==="

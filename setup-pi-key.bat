@@ -2,7 +2,7 @@
 setlocal
 
 set USER=frc302
-set HOST=dragondataloggerz.local
+set HOST=pi-logger.local
 set LOGIN=%USER%@%HOST%
 set KEY=./keys/id_ed25519
 set AUTHFILE=./deploy/pi-logger/home/frc302/.ssh/authorized_keys
