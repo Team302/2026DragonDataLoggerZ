@@ -21,15 +21,18 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.util.datalog.DataLogWriter;
 import edu.wpi.first.util.datalog.StructLogEntry;
 import edu.wpi.first.util.datalog.StructArrayLogEntry;
 import edu.wpi.first.util.struct.Struct;
 import pi.logger.config.LoggerConfig;
 import pi.logger.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class USBFileLogger {
+
+    private static final Logger LOG = LoggerFactory.getLogger(USBFileLogger.class);
 
     private static final long DEFAULT_MAX_FILE_AGE_MS = 5 * 60 * 1000; // 5 minutes
     private static final int DEFAULT_FLUSH_ENTRY_THRESHOLD = 200;
@@ -63,9 +66,8 @@ public final class USBFileLogger {
     public static void start() {
         // Initialize the relative time clock so all log timestamps start near 0
         TimeUtils.initialize();
-        System.out.println("USBFileLogger config: maxFileAgeMs=" + maxFileAgeMs
-        + ", flushEntryThreshold=" + flushEntryThreshold
-        + ", flushTimeThresholdMs=" + flushTimeThresholdMs);
+        LOG.info("Config: maxFileAgeMs={}, flushEntryThreshold={}, flushTimeThresholdMs={}",
+                maxFileAgeMs, flushEntryThreshold, flushTimeThresholdMs);
         Thread t = new Thread(USBFileLogger::run, "file-logger");
         t.setDaemon(true);
         rotationThread = t;
@@ -190,7 +192,7 @@ public final class USBFileLogger {
                 try {
                     log.flush();
                 } catch (Exception e) {
-                    System.err.println("USBFileLogger flush failed: " + e.getMessage());
+                    LOG.error("flush failed: {}", e.getMessage());
                 }
                 writesSinceFlush = 0;
                 lastFlushTimeMs = System.currentTimeMillis();
@@ -215,8 +217,7 @@ public final class USBFileLogger {
                 }
             }
         } catch (Exception e) {
-            System.err.println("FileLogger error");
-            e.printStackTrace();
+            LOG.error("FileLogger error", e);
         } finally {
             closeQuietly();
         }
@@ -243,10 +244,9 @@ public final class USBFileLogger {
 
             fileStartTime = System.currentTimeMillis();
 
-            System.out.println("Logging to " + currentFile.getName());
+            LOG.info("Logging to {}", currentFile.getName());
         } catch (Exception e) {
-            System.err.println("Failed to open log file: " + e.getMessage());
-            e.printStackTrace();
+            LOG.error("Failed to open log file: {}", e.getMessage(), e);
         }
     }
 
@@ -279,7 +279,7 @@ public final class USBFileLogger {
                 try {
                     log.flush();
                 } catch (Exception e) {
-                    System.err.println("USBFileLogger flush failed: " + e.getMessage());
+                    LOG.error("flush failed: {}", e.getMessage());
                 }
                 writesSinceFlush = 0;
                 lastFlushTimeMs = now;

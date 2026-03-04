@@ -17,6 +17,8 @@ package pi.logger.csvparsers;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility for converting double arrays into FRC {@link Pose2d} objects.
@@ -26,6 +28,8 @@ import edu.wpi.first.math.geometry.Translation2d;
  */
 public final class Pose2dUtil {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Pose2dUtil.class);
+
     /** Minimum array length required: x, y, and rotation. */
     public static final int REQUIRED_LENGTH = 3;
 
@@ -33,12 +37,12 @@ public final class Pose2dUtil {
 
     public static Pose2d fromString(String str) {
         if (str == null || str.isBlank()) {
-            System.out.println("Input string is null or blank, cannot parse Pose2d");
+            LOG.warn("Input string is null or blank, cannot parse Pose2d");
             throw new IllegalArgumentException("Input string cannot be null or blank");
         }
         String[] parts = str.split(";", 3);
         if (parts.length < REQUIRED_LENGTH) {
-            System.out.println("Input string does not have enough parts, cannot parse Pose2d: " + str);
+            LOG.warn("Input string does not have enough parts, cannot parse Pose2d: {}", str);
             throw new IllegalArgumentException(
                 "Input string must have at least " + REQUIRED_LENGTH + " parts separated by ';' [x;y;rotation]"
             );
@@ -50,7 +54,7 @@ public final class Pose2dUtil {
             Pose2d pose = new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(rotation));
             return pose;
         } catch (NumberFormatException e) {
-            System.out.println("Invalid number format in input string, cannot parse Pose2d: " + str);
+            LOG.warn("Invalid number format in input string, cannot parse Pose2d: {}", str);
             throw new IllegalArgumentException("Invalid number format in input string: " + str, e);
         }
     }

@@ -23,6 +23,7 @@ import pi.logger.nt.HealthPublisher;
 import pi.logger.nt.MatchInfoListener;
 import pi.logger.nt.NetworkTablesLogger;
 import pi.logger.nt.NtClient;
+import pi.logger.nt.OculusVideoRecorder;
 import pi.logger.telemetry.CsvTelemetryStage;
 import pi.logger.telemetry.DataLogStage;
 import pi.logger.telemetry.TelemetryProcessor;
@@ -33,8 +34,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PiLogger {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PiLogger.class);
     
     private static void extractAndLoadLibrary(String libName) throws IOException {
         String osName = System.getProperty("os.name").toLowerCase();
@@ -58,7 +63,7 @@ public class PiLogger {
         }
         
         String resourcePath = "/" + platform + "/shared/" + libPrefix + libName + libExt;
-        System.out.println("Attempting to load library from: " + resourcePath);
+        LOG.debug("Attempting to load library from: {}", resourcePath);
         
         try (InputStream in = PiLogger.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
@@ -82,12 +87,12 @@ public class PiLogger {
             
             // Load library
             System.load(tempLib.getAbsolutePath());
-            System.out.println("Successfully loaded: " + libName);
+            LOG.debug("Successfully loaded: {}", libName);
         }
     }
     
     public static void main(String[] args) throws Exception {
-        System.out.println("Pi logger starting");
+        LOG.info("Pi logger starting");
         
         // Disable automatic extraction - we load manually
         NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
@@ -108,8 +113,7 @@ public class PiLogger {
             extractAndLoadLibrary("ntcore");
             extractAndLoadLibrary("ntcorejni");
         } catch (IOException e) {
-            System.err.println("Failed to load native libraries: " + e.getMessage());
-            e.printStackTrace();
+            LOG.error("Failed to load native libraries: {}", e.getMessage(), e);
             throw e;
         }
         
@@ -132,14 +136,15 @@ public class PiLogger {
 
         UdpReceiver.start();
         NetworkTablesLogger.start();
+        OculusVideoRecorder.start();
 
-        System.out.println("Pi logger running");
+        LOG.info("Pi logger running");
 
         while (true) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                System.out.println("interrupted");
+                LOG.info("interrupted");
                 return;
             }
         }

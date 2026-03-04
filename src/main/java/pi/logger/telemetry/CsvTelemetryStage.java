@@ -18,8 +18,12 @@ import edu.wpi.first.math.geometry.Pose2d;
 import pi.logger.config.LoggerConfig;
 import pi.logger.csvparsers.Pose2dUtil;
 import pi.logger.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CsvTelemetryStage implements TelemetryStage {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CsvTelemetryStage.class);
 
     /**
      * When {@code true}, the timestamp parsed from the CSV payload (parts[0]) is used
@@ -44,7 +48,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
         // Parse CSV format: timestamp,signalID,type,value,units
         String[] parts = payload.split(",", 5);
         if (parts.length < 4) {
-            System.err.println("Invalid message format: " + payload);
+            LOG.warn("Invalid message format: {}", payload);
             return;
         }
 
@@ -162,7 +166,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
                         null);
 
                 default -> {
-                    System.err.println("Unknown CSV type: " + type + " for entry: " + entryName + " (falling back to STRING)");
+                    LOG.warn("Unknown CSV type: {} for entry: {} (falling back to STRING)", type, entryName);
                     yield new TelemetryEvent(
                             timestampMicros,
                             original.source(),
@@ -173,7 +177,7 @@ public final class CsvTelemetryStage implements TelemetryStage {
                 }
             };
         } catch (NumberFormatException e) {
-            System.err.println("Failed to parse CSV value for type " + type + ": " + value);
+            LOG.warn("Failed to parse CSV value for type {}: {}", type, value);
             return null;
         }
     }
