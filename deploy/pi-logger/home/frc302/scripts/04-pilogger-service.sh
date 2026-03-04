@@ -5,8 +5,8 @@ echo "--- Setting up pilogger service ---"
 sudo tee /etc/systemd/system/pilogger.service > /dev/null <<EOF
 [Unit]
 Description=PiLogger
-After=network-online.target
-Wants=network-online.target
+After=network-online.target mnt-usb_logs.mount
+Wants=network-online.target mnt-usb_logs.mount
 
 [Service]
 User=frc302
