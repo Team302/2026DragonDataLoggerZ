@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+echo "--- Updating pilogger jar ---"
+
 JAR_SRC="/tmp/PiLogger-linuxarm64-cross.jar"
 JAR_DEST="/home/frc302/PiLogger-linuxarm64-cross.jar"
 
@@ -13,3 +15,4 @@ sudo systemctl stop pilogger.service
 sudo install -o frc302 -g frc302 -m 644 "$JAR_SRC" "$JAR_DEST"
 sudo systemctl start pilogger.service
 sudo systemctl status pilogger.service
+echo "--- Pilogger update done ---"
