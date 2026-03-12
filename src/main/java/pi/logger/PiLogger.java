@@ -20,6 +20,7 @@ import edu.wpi.first.math.jni.WPIMathJNI;
 import edu.wpi.first.util.WPIUtilJNI;
 import pi.logger.datalog.USBFileLogger;
 import pi.logger.nt.HealthPublisher;
+import pi.logger.nt.LimelightVideoRecorder;
 import pi.logger.nt.MatchInfoListener;
 import pi.logger.nt.NetworkTablesLogger;
 import pi.logger.nt.NtClient;
@@ -137,6 +138,7 @@ public class PiLogger {
         UdpReceiver.start();
         NetworkTablesLogger.start();
         OculusVideoRecorder.start();
+        LimelightVideoRecorder.start();
 
         LOG.info("Pi logger running");
 
