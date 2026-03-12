@@ -187,8 +187,8 @@ public class FfmpegUtils {
             }
             identifier = (event.isEmpty() ? "" : event + "_") + matchTag;
         } else {
-            // Date/time with underscores for readability
-            identifier = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss_SSS")
+            // Date/time with underscores and am/pm for readability
+            identifier = DateTimeFormatter.ofPattern("yyyy_MM_dd_hh_mm_ss_a_SSS")
                     .withZone(ZoneId.systemDefault())
                     .format(Instant.now());
         }
