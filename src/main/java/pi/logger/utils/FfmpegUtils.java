@@ -162,19 +162,63 @@ public class FfmpegUtils {
         }
     }
 
-    public static String buildOutputPath(String description, String mode) {
-        // Include milliseconds to avoid collisions when multiple files start within the same second
-        String ts = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.now());
-        // Sanitise description/mode for use in filenames
+    /**
+     * Build an output file path for a video recording.
+     *
+     * @param prefix      short label for the source, e.g. "limelight" or "oculus"
+     * @param description camera description from NT (may be null/blank)
+     * @param mode        camera mode from NT (may be null/blank)
+     * @return absolute path to the output .mkv file
+     *
+     * <p>When FMS is attached the filename encodes the match:
+     * {@code prefix_EventName_QM12.mkv} (Qualification Match 12).
+     * Otherwise it uses the current date/time with underscores:
+     * {@code prefix_2026_03_11_14_30_05_123.mkv}.
+     */
+    public static String buildOutputPath(String prefix, String description, String mode) {
+        String identifier;
+        String time = DateTimeFormatter.ofPattern("_yyyy_MM_dd_HH_mm_ss_SSS")
+                .withZone(ZoneId.systemDefault())
+                .format(Instant.now());
+        if (pi.logger.nt.MatchInfoListener.isFmsAttached()) {
+            String event = sanitize(pi.logger.nt.MatchInfoListener.getEventName());
+            String matchTag = matchTypeTag(pi.logger.nt.MatchInfoListener.getMatchType())
+                    + pi.logger.nt.MatchInfoListener.getMatchNumber();
+            int replay = pi.logger.nt.MatchInfoListener.getReplayNumber();
+            if (replay > 0) {
+                matchTag += "_R" + replay;
+            }
+            identifier = (event.isEmpty() ? "" : event + "_") + matchTag + time;
+        } else {
+            // Date/time with underscores and am/pm for readability
+            identifier = time;
+        }
+
+        String safePrefix = sanitize(prefix);
         String safeDesc = sanitize(description);
         String safeMode = sanitize(mode);
-        String name = "oculus_" + ts
-                + (safeDesc.isEmpty() ? "" : "_" + safeDesc)
-                + (safeMode.isEmpty() ? "" : "_" + safeMode)
-                + ".mkv";
-        return new File(VIDEO_DIR_PATH, name).getAbsolutePath();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(safePrefix.isEmpty() ? "video" : safePrefix);
+        sb.append('_').append(identifier);
+        if (!safeDesc.isEmpty()) sb.append('_').append(safeDesc);
+        if (!safeMode.isEmpty()) sb.append('_').append(safeMode);
+        sb.append(".mkv");
+
+        return new File(VIDEO_DIR_PATH, sb.toString()).getAbsolutePath();
+    }
+
+    /**
+     * Convert the WPILib MatchType integer to a short filename-safe tag.
+     * Values: 0 = None, 1 = Practice, 2 = Qualification, 3 = Elimination.
+     */
+    private static String matchTypeTag(int matchType) {
+        return switch (matchType) {
+            case 1 -> "PM";
+            case 2 -> "QM";
+            case 3 -> "EM";
+            default -> "M";
+        };
     }
 
     /**
