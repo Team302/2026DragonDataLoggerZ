@@ -115,19 +115,14 @@ public final class LimelightVideoRecorder {
 
         try {
             while (running) {
+                boolean reachable = isStreamReachable();
                 boolean robotActive = MatchInfoListener.isEnabled();
-                boolean reachable = true;
-                if(ffmpegProcess == null)
-                {
-                    reachable = isStreamReachable();
-                }
-
                 boolean shouldRecord = robotActive && reachable;
                 boolean durationExpired = ffmpegProcess != null
                         && (System.currentTimeMillis() - fileStartMs) >= (long) MAX_FILE_DURATION_SEC * 1000;
 
                 // Stop current recording if conditions no longer met or file duration exceeded
-                if ( !shouldRecord || durationExpired) {
+                if (ffmpegProcess != null && (!shouldRecord || durationExpired)) {
                     writeStatus("STOP", activeOutputPath);
                     FfmpegUtils.stopFfmpeg(ffmpegProcess, STREAM_URL, activeOutputPath, "limelight", "mjpeg");
                     ffmpegProcess = null;
