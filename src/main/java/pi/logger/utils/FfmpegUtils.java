@@ -208,11 +208,6 @@ public class FfmpegUtils {
         return new File(VIDEO_DIR_PATH, sb.toString()).getAbsolutePath();
     }
 
-    /** Keep the old two-arg signature for backwards compatibility. */
-    public static String buildOutputPath(String description, String mode) {
-        return buildOutputPath("video", description, mode);
-    }
-
     /**
      * Convert the WPILib MatchType integer to a short filename-safe tag.
      * Values: 0 = None, 1 = Practice, 2 = Qualification, 3 = Elimination.
