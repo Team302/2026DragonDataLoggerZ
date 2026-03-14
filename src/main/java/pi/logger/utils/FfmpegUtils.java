@@ -177,6 +177,9 @@ public class FfmpegUtils {
      */
     public static String buildOutputPath(String prefix, String description, String mode) {
         String identifier;
+        String time = DateTimeFormatter.ofPattern("_yyyy_MM_dd_HH_mm_ss_SSS")
+                .withZone(ZoneId.systemDefault())
+                .format(Instant.now());
         if (pi.logger.nt.MatchInfoListener.isFmsAttached()) {
             String event = sanitize(pi.logger.nt.MatchInfoListener.getEventName());
             String matchTag = matchTypeTag(pi.logger.nt.MatchInfoListener.getMatchType())
@@ -185,12 +188,10 @@ public class FfmpegUtils {
             if (replay > 0) {
                 matchTag += "_R" + replay;
             }
-            identifier = (event.isEmpty() ? "" : event + "_") + matchTag;
+            identifier = (event.isEmpty() ? "" : event + "_") + matchTag + time;
         } else {
             // Date/time with underscores and am/pm for readability
-            identifier = DateTimeFormatter.ofPattern("yyyy_MM_dd_hh_mm_ss_a_SSS")
-                    .withZone(ZoneId.systemDefault())
-                    .format(Instant.now());
+            identifier = time;
         }
 
         String safePrefix = sanitize(prefix);
