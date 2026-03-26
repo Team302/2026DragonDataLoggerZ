@@ -170,10 +170,15 @@ public class FfmpegUtils {
      * @param mode        camera mode from NT (may be null/blank)
      * @return absolute path to the output .mkv file
      *
-     * <p>When FMS is attached the filename encodes the match:
-     * {@code prefix_EventName_QM12.mkv} (Qualification Match 12).
-     * Otherwise it uses the current date/time with underscores:
+     * <p>When FMS is attached the filename encodes the match, followed by a timestamp:
+     * {@code prefix_EventName_QM12_2026_03_11_14_30_05_123.mkv}
+     * for Qualification Match 12 at the given time. If the match is a replay, an
+     * additional replay tag is included, for example:
+     * {@code prefix_EventName_QM12_R1_2026_03_11_14_30_05_123.mkv}.
+     * Otherwise (no FMS attached) it uses only the current date/time with underscores:
      * {@code prefix_2026_03_11_14_30_05_123.mkv}.
+     * In all cases, sanitized description/mode segments (if present) are appended
+     * before the {@code .mkv} extension.
      */
     public static String buildOutputPath(String prefix, String description, String mode) {
         String identifier;
