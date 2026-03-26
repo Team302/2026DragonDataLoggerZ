@@ -73,7 +73,7 @@ public final class LimelightVideoRecorder {
     private static final int CONNECT_TIMEOUT_MS = 2000;
 
     /** How often (ms) to re-check when the stream is not reachable. */
-    private static final long POLL_INTERVAL_MS = 500;
+    private static final long POLL_INTERVAL_MS = 2000;
 
     private static volatile boolean running = true;
     private static Thread recorderThread;
