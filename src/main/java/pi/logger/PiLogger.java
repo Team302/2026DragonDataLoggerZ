@@ -26,6 +26,7 @@ import pi.logger.nt.NtClient;
 import pi.logger.nt.OculusVideoRecorder;
 import pi.logger.telemetry.CsvTelemetryStage;
 import pi.logger.telemetry.DataLogStage;
+import pi.logger.telemetry.PiHealthMonitor;
 import pi.logger.telemetry.TelemetryProcessor;
 import pi.logger.udp.UdpReceiver;
 
@@ -133,6 +134,9 @@ public class PiLogger {
         TelemetryProcessor.registerStage(new CsvTelemetryStage());
         TelemetryProcessor.registerStage(new DataLogStage());
         TelemetryProcessor.start();
+
+        PiHealthMonitor healthMonitor = new PiHealthMonitor(TelemetryProcessor::publish);
+        healthMonitor.start(1);
 
         UdpReceiver.start();
         NetworkTablesLogger.start();
