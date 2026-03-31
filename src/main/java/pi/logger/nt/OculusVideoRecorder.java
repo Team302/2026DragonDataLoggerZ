@@ -152,7 +152,7 @@ public final class OculusVideoRecorder {
                 }
 
                 if (shouldRecord && (ffmpegProcess == null || !ffmpegProcess.isAlive())) {
-                    String outputPath = FfmpegUtils.buildOutputPath(description, mode);
+                    String outputPath = FfmpegUtils.buildOutputPath("oculus", description, mode);
                     ffmpegProcess = FfmpegUtils.startFfmpeg(streamUrl, outputPath);
                     if (ffmpegProcess != null) {
                         activeUrl   = streamUrl;
