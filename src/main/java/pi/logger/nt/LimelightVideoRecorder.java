@@ -58,41 +58,41 @@ import org.slf4j.LoggerFactory;
  */
 public final class LimelightVideoRecorder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LimelightVideoRecorder.class);
+    private static final Logger m_log = LoggerFactory.getLogger(LimelightVideoRecorder.class);
 
-    private static final boolean ENABLED =
+    private static final boolean m_enabled =
             LoggerConfig.getBoolean("limelight.enabled", true);
 
-    private static final String STREAM_URL =
+    private static final String m_streamUrl =
             LoggerConfig.getString("limelight.streamUrl", "http://limelight-front.local:5800");
 
-    private static final int MAX_FILE_DURATION_SEC =
+    private static final int m_maxFileDurationSec =
             LoggerConfig.getInt("limelight.maxFileDurationSec", 300, 10, 3600);
 
     /** Timeout (ms) for the HTTP reachability check. */
-    private static final int CONNECT_TIMEOUT_MS = 2000;
+    private static final int m_connectTimeoutMs = 2000;
 
     /** How often (ms) to re-check when the stream is not reachable. */
-    private static final long POLL_INTERVAL_MS = 2000;
+    private static final long m_pollIntervalMs = 2000;
 
-    private static volatile boolean running = true;
-    private static Thread recorderThread;
+    private static volatile boolean m_running = true;
+    private static Thread m_recorderThread;
 
     private LimelightVideoRecorder() {}
 
     public static void start() {
-        if (!ENABLED) {
-            LOG.info("Limelight recorder disabled by config");
+        if (!m_enabled) {
+            m_log.info("Limelight recorder disabled by config");
             return;
         }
-        recorderThread = new Thread(LimelightVideoRecorder::run, "limelight-video-recorder");
-        recorderThread.setDaemon(true);
-        recorderThread.start();
+        m_recorderThread = new Thread(LimelightVideoRecorder::run, "limelight-video-recorder");
+        m_recorderThread.setDaemon(true);
+        m_recorderThread.start();
     }
 
     public static void stop() {
-        running = false;
-        Thread t = recorderThread;
+        m_running = false;
+        Thread t = m_recorderThread;
         if (t != null) {
             t.interrupt();
         }
@@ -105,7 +105,7 @@ public final class LimelightVideoRecorder {
     private static void run() {
         FfmpegUtils.initFfmpegPath();
 
-        LOG.info("watching Limelight stream at {}", STREAM_URL);
+        m_log.info("watching Limelight stream at {}", m_streamUrl);
         writeStatus("WATCHING", null);
 
         Process ffmpegProcess = null;
@@ -114,17 +114,22 @@ public final class LimelightVideoRecorder {
         long lastUnreachableLogMs = 0;
 
         try {
-            while (running) {
-                boolean reachable = isStreamReachable();
+            while (m_running) {
                 boolean robotActive = MatchInfoListener.isEnabled();
+                boolean reachable = true;
+                if(ffmpegProcess == null)
+                {
+                    reachable = isStreamReachable();
+                }
+
                 boolean shouldRecord = robotActive && reachable;
                 boolean durationExpired = ffmpegProcess != null
-                        && (System.currentTimeMillis() - fileStartMs) >= (long) MAX_FILE_DURATION_SEC * 1000;
+                        && (System.currentTimeMillis() - fileStartMs) >= (long) m_maxFileDurationSec * 1000;
 
                 // Stop current recording if conditions no longer met or file duration exceeded
                 if (ffmpegProcess != null && (!shouldRecord || durationExpired)) {
                     writeStatus("STOP", activeOutputPath);
-                    FfmpegUtils.stopFfmpeg(ffmpegProcess, STREAM_URL, activeOutputPath, "limelight", "mjpeg");
+                    FfmpegUtils.stopFfmpeg(ffmpegProcess, m_streamUrl, activeOutputPath, "limelight", "mjpeg");
                     ffmpegProcess = null;
                     activeOutputPath = null;
                 }
@@ -132,11 +137,11 @@ public final class LimelightVideoRecorder {
                 // Start a new recording when conditions are met
                 if (shouldRecord && (ffmpegProcess == null || !ffmpegProcess.isAlive())) {
                     String outputPath = FfmpegUtils.buildOutputPath("limelight", "limelight-front", "mjpeg");
-                    ffmpegProcess = FfmpegUtils.startFfmpeg(STREAM_URL, outputPath);
+                    ffmpegProcess = FfmpegUtils.startFfmpeg(m_streamUrl, outputPath);
                     if (ffmpegProcess != null) {
                         activeOutputPath = outputPath;
                         fileStartMs = System.currentTimeMillis();
-                        LOG.info("recording started  url={}  output={}", STREAM_URL, outputPath);
+                        m_log.info("recording started  url={}  output={}", m_streamUrl, outputPath);
                         writeStatus("START", outputPath);
                     }
                 }
@@ -150,16 +155,16 @@ public final class LimelightVideoRecorder {
                     }
                 }
 
-                Thread.sleep(POLL_INTERVAL_MS);
+                Thread.sleep(m_pollIntervalMs);
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         } finally {
             if (ffmpegProcess != null) {
                 writeStatus("STOP", activeOutputPath);
-                FfmpegUtils.stopFfmpeg(ffmpegProcess, STREAM_URL, activeOutputPath, "limelight", "mjpeg");
+                FfmpegUtils.stopFfmpeg(ffmpegProcess, m_streamUrl, activeOutputPath, "limelight", "mjpeg");
             }
-            LOG.info("stopped");
+            m_log.info("stopped");
         }
     }
 
@@ -174,9 +179,9 @@ public final class LimelightVideoRecorder {
      */
     private static boolean isStreamReachable() {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(STREAM_URL).openConnection();
-            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
-            conn.setReadTimeout(CONNECT_TIMEOUT_MS);
+            HttpURLConnection conn = (HttpURLConnection) new URL(m_streamUrl).openConnection();
+            conn.setConnectTimeout(m_connectTimeoutMs);
+            conn.setReadTimeout(m_connectTimeoutMs);
             conn.setRequestMethod("GET");
             conn.connect();
             int code = conn.getResponseCode();
@@ -195,11 +200,12 @@ public final class LimelightVideoRecorder {
      * Write a status line to a rolling status log file in the video directory.
      */
     private static synchronized void writeStatus(String action, String outputPath) {
-        String ts = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
+        // Use 12-hour clock with AM/PM for operator-friendly logs
+        String ts = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss.SSS a")
                 .withZone(ZoneId.systemDefault())
                 .format(Instant.now());
         String line = String.format("%s %s url=%s output=%s",
-                ts, action, STREAM_URL,
+                ts, action, m_streamUrl,
                 outputPath == null ? "" : outputPath);
 
         File f = new File(FfmpegUtils.getVideoDirPath(), "limelight_status.log");
@@ -209,9 +215,9 @@ public final class LimelightVideoRecorder {
             pw.println(line);
             pw.flush();
         } catch (IOException e) {
-            LOG.error("failed to write status log: {}", e.getMessage());
+            m_log.error("failed to write status log: {}", e.getMessage());
         }
 
-        LOG.info("{}", line);
+        m_log.info("{}", line);
     }
 }
