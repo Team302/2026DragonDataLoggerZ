@@ -210,7 +210,7 @@ task setupPi {
         def host = 'pi-logger.local'
         def login = "${user}@${host}"
         def key = project.file('keys/id_ed25519').absolutePath
-        def scriptsDir = project.file('deploy/pi-logger/home/frc302/scripts').absolutePath
+        def scriptsDir = project.file('deploy/pi-logger/home/frc302').absolutePath
         def deployScript = project.file('deploy/pi-logger/home/frc302/deploy-pi.sh').absolutePath
         def jar = project.file('build/libs/PiLogger-linuxarm64-cross.jar').absolutePath
 
