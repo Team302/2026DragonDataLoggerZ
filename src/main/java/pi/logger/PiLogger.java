@@ -28,6 +28,7 @@ import pi.logger.nt.OculusVideoRecorder;
 import pi.logger.telemetry.CsvTelemetryStage;
 import pi.logger.telemetry.DataLogStage;
 import pi.logger.telemetry.TelemetryProcessor;
+import pi.logger.time.SystemTimeUpdater;
 import pi.logger.udp.UdpReceiver;
 
 import java.io.File;
@@ -127,6 +128,7 @@ public class PiLogger {
     public void run(String[] args) {
         NtClient.start();
 
+        SystemTimeUpdater.start();
         MatchInfoListener.start();
         HealthPublisher.start();
 

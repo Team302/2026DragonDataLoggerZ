@@ -229,6 +229,14 @@ task setupPi {
 
         println "Setting up ${host}..."
 
+                def result1 = exec {
+            commandLine 'chmod', '+x', "${login}*:/home/frc302/scripts/scripts/ *.sh"
+            ignoreExitValue = true
+        }
+        if (result1.exitValue != 0) {
+            throw new GradleException("Failed to copy deploy-pi.sh to ${host}. Aborting.")
+        }
+
         // Copy deploy script
         def result1 = exec {
             commandLine 'scp', '-i', key, deployScript, "${login}:/home/frc302/deploy-pi.sh"
