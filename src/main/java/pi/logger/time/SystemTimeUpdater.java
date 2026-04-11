@@ -16,6 +16,8 @@ public class SystemTimeUpdater {
 
     private static DoubleSubscriber timeSubscriber;
 
+    private static boolean m_hasbeenreset = false;
+
     public static void start() {
         Thread updaterThread = new Thread(() -> {
             LOG.info("SystemTimeUpdater thread started");
@@ -45,9 +47,10 @@ public class SystemTimeUpdater {
                         LOG.info("Listener event fired for pi-system-time");
                         double epochSeconds = timeSubscriber.get(0.0);
                         LOG.info("Event value retrieved: {}", epochSeconds);
-                        if (epochSeconds > 0) {
+                        if (epochSeconds > 0 && !m_hasbeenreset) {
                             LOG.info("Event value > 0, calling updateSystemTime");
                             updateSystemTime(epochSeconds);
+                            m_hasbeenreset = true;
                         } else {
                             LOG.info("Event value is 0 or negative, skipping updateSystemTime");
                         }
