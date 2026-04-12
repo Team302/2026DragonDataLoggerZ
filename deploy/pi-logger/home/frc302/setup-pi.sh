@@ -11,7 +11,7 @@ bash "$SCRIPT_DIR/scripts/03-ntp-setup.sh"
 bash "$SCRIPT_DIR/scripts/04-pilogger-service.sh"
 bash "$SCRIPT_DIR/scripts/05-update-pilogger.sh"
 bash "$SCRIPT_DIR/scripts/06-disable-wifi-bt.sh"
-bash "$SCRIPT_DIR/scripts/07-static-ip.sh"
+#bash "$SCRIPT_DIR/scripts/07-static-ip.sh"
 bash "$SCRIPT_DIR/scripts/08-performance.sh"
 bash "$SCRIPT_DIR/scripts/09-watchdog.sh"
 

@@ -6,7 +6,11 @@ echo "--- Configuring performance settings ---"
 if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
     echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
     # Persist across reboots via rc.local
-    if ! grep -q "scaling_governor" /etc/rc.local 2>/dev/null; then
+    if [ ! -f /etc/rc.local ]; then
+        printf '#!/bin/sh -e\nexit 0\n' | sudo tee /etc/rc.local > /dev/null
+        sudo chmod +x /etc/rc.local
+    fi
+    if ! grep -q "scaling_governor" /etc/rc.local; then
         sudo sed -i '/^exit 0/i echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor' /etc/rc.local
     fi
     echo "CPU governor set to performance"
